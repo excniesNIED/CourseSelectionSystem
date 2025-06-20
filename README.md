@@ -1,33 +1,5 @@
 # 教务系统选课系统
 
-## 开源地址
-
-本项目已在GitHub开源，欢迎Star和Fork：
-
-- https://github.com/excniesNIED/CourseSelectionSystem
-
-## 界面截图（预留）
-
-> 以下为系统主要界面截图展示（请在此处插入截图图片）：
-
-- 登录页
-- 管理员后台首页
-- 教师端课程管理
-- 学生端选课界面
-- 成绩查询界面
-
-（请将截图图片放置于 `docs/screenshots/` 目录，并在此处通过Markdown语法插入图片链接）
-
-示例：
-
-```markdown
-![登录页](docs/screenshots/login.png)
-![管理员首页](docs/screenshots/admin_home.png)
-![教师课程管理](docs/screenshots/teacher_courses.png)
-![学生选课](docs/screenshots/student_select.png)
-![成绩查询](docs/screenshots/score_query.png)
-```
-
 一个基于Vue 3 + Python Flask的前后端分离教务系统选课管理平台。
 
 ## 技术栈
