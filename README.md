@@ -26,26 +26,72 @@
 
 ```
 CourseSelectionSystem/
-├── frontend/                 # Vue前端项目
-│   ├── src/
-│   │   ├── components/      # 组件
-│   │   ├── views/           # 页面视图
-│   │   ├── router/          # 路由配置
-│   │   ├── stores/          # 状态管理
-│   │   └── utils/           # 工具函数
-│   ├── package.json
-│   └── vite.config.js
-├── backend/                  # Python后端项目
-│   ├── app/
-│   │   ├── models/          # 数据模型
-│   │   ├── routes/          # 路由控制器
-│   │   ├── utils/           # 工具函数
-│   │   └── __init__.py
-│   ├── requirements.txt
-│   └── run.py
-├── database/                 # 数据库脚本
-│   └── init.sql             # 数据库初始化脚本
-└── README.md
+├── 需求.md                   # 项目需求文档
+├── README.md                 # 项目说明文档
+├── .gitignore               # Git忽略文件配置
+├── frontend/                 # Vue 3 前端项目
+│   ├── index.html           # HTML入口文件
+│   ├── package.json         # 前端依赖配置
+│   ├── package-lock.json    # 依赖版本锁定
+│   ├── vite.config.js       # Vite构建配置
+│   ├── node_modules/        # 前端依赖包
+│   └── src/
+│       ├── App.vue          # 根组件
+│       ├── main.js          # 应用入口
+│       ├── plugins/
+│       │   └── vuetify.js   # Vuetify UI框架配置
+│       ├── router/
+│       │   └── index.js     # Vue Router路由配置
+│       ├── stores/
+│       │   └── auth.js      # Pinia状态管理（认证）
+│       ├── styles/
+│       │   └── dashboard.css # 通用Dashboard样式
+│       ├── utils/
+│       │   └── api.js       # API请求工具
+│       └── views/           # 页面组件
+│           ├── Login.vue    # 登录页面
+│           ├── NotFound.vue # 404页面
+│           ├── admin/       # 管理员页面
+│           │   ├── Dashboard.vue        # 管理员仪表板
+│           │   ├── Overview.vue         # 系统总览
+│           │   ├── TeacherManagement.vue # 教师管理
+│           │   ├── StudentManagement.vue # 学生管理
+│           │   ├── CourseManagement.vue  # 课程管理
+│           │   └── ClassManagement.vue   # 班级管理
+│           ├── teacher/     # 教师页面
+│           │   ├── Dashboard.vue    # 教师仪表板
+│           │   ├── Overview.vue     # 教师总览
+│           │   ├── Courses.vue      # 我的课程
+│           │   ├── Students.vue     # 学生管理
+│           │   ├── Grades.vue       # 成绩管理
+│           │   └── Statistics.vue   # 统计分析
+│           ├── student/     # 学生页面
+│           │   ├── Dashboard.vue    # 学生仪表板
+│           │   ├── Overview.vue     # 学生总览
+│           │   ├── Courses.vue      # 课程浏览
+│           │   ├── Enrollment.vue   # 选课管理
+│           │   └── Grades.vue       # 我的成绩
+│           └── common/      # 通用页面
+│               └── Profile.vue      # 个人信息
+├── backend/                  # Flask 后端项目
+│   ├── run.py               # 后端启动文件
+│   ├── create_db.py         # 数据库创建脚本
+│   ├── init_data.py         # 初始数据脚本
+│   ├── requirements.txt     # Python依赖配置
+│   ├── .env                 # 环境变量配置
+│   ├── .env.example         # 环境变量模板
+│   └── app/                 # 应用核心代码
+│       ├── __init__.py      # Flask应用初始化
+│       ├── models/          # 数据模型
+│       │   └── __init__.py  # 数据模型定义
+│       └── routes/          # API路由
+│           ├── auth.py      # 认证相关API
+│           ├── common.py    # 通用API
+│           ├── admin.py     # 管理员API
+│           ├── teacher.py   # 教师API
+│           └── student.py   # 学生API
+└── database/                 # 数据库相关
+    └── init.sql             # MySQL数据库初始化脚本
 ```
 
 ## 功能特性
