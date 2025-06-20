@@ -17,8 +17,7 @@ const routes = [
     name: 'Login',
     component: Login,
     meta: { requiresAuth: false }
-  },
-  {
+  },  {
     path: '/admin',
     name: 'AdminDashboard',
     component: AdminDashboard,
@@ -26,6 +25,7 @@ const routes = [
     children: [
       {
         path: '',
+        name: 'AdminDefault',
         redirect: '/admin/overview'
       },
       {
@@ -59,8 +59,7 @@ const routes = [
         component: () => import('@/views/common/Profile.vue')
       }
     ]
-  },
-  {
+  },  {
     path: '/teacher',
     name: 'TeacherDashboard',
     component: TeacherDashboard,
@@ -68,6 +67,7 @@ const routes = [
     children: [
       {
         path: '',
+        name: 'TeacherDefault',
         redirect: '/teacher/overview'
       },
       {
@@ -101,8 +101,7 @@ const routes = [
         component: () => import('@/views/common/Profile.vue')
       }
     ]
-  },
-  {
+  },  {
     path: '/student',
     name: 'StudentDashboard',
     component: StudentDashboard,
@@ -110,6 +109,7 @@ const routes = [
     children: [
       {
         path: '',
+        name: 'StudentDefault',
         redirect: '/student/overview'
       },
       {
