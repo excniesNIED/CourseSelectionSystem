@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="900" height="520" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .table { fill: #f8f9fa; stroke: #333; stroke-width: 1.2; }
+    .header { fill: #1976d2; font-weight: bold; font-size: 16px; fill-opacity: 0.95; }
+    .field { font-size: 13px; fill: #222; }
+    .pk { font-weight: bold; fill: #d32f2f; }
+    .fk { font-weight: bold; fill: #388e3c; }
+    .caption { font-size: 15px; fill: #333; font-weight: bold; }
+    .rel { stroke: #1976d2; stroke-width: 1.2; marker-end: url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 L2,5 Z" fill="#1976d2" />
+    </marker>
+  </defs>
+  <text x="450" y="30" text-anchor="middle" class="caption">教务系统选课数据库 ER 图</text>
+
+  <!-- Classes -->
+  <rect x="40" y="70" width="150" height="80" class="table"/>
+  <text x="115" y="90" text-anchor="middle" class="header">classes</text>
+  <text x="50" y="110" class="field pk">class_id (PK)</text>
+  <text x="50" y="128" class="field">class_name</text>
+
+  <!-- Students -->
+  <rect x="40" y="180" width="200" height="120" class="table"/>
+  <text x="140" y="200" text-anchor="middle" class="header">students</text>
+  <text x="50" y="220" class="field pk">student_id (PK)</text>
+  <text x="50" y="238" class="field">name, gender, age</text>
+  <text x="50" y="256" class="field">hometown, total_credits</text>
+  <text x="50" y="274" class="field">password</text>
+  <text x="50" y="292" class="field fk">class_id (FK)</text>
+
+  <!-- Teachers -->
+  <rect x="700" y="70" width="150" height="110" class="table"/>
+  <text x="775" y="90" text-anchor="middle" class="header">teachers</text>
+  <text x="710" y="110" class="field pk">teacher_id (PK)</text>
+  <text x="710" y="128" class="field">name, gender, age</text>
+  <text x="710" y="146" class="field">title, phone</text>
+  <text x="710" y="164" class="field">password</text>
+
+  <!-- Courses -->
+  <rect x="700" y="210" width="150" height="90" class="table"/>
+  <text x="775" y="230" text-anchor="middle" class="header">courses</text>
+  <text x="710" y="250" class="field pk">course_id (PK)</text>
+  <text x="710" y="268" class="field">course_name, hours</text>
+  <text x="710" y="286" class="field">exam_type, credits</text>
+
+  <!-- Course Offerings -->
+  <rect x="370" y="120" width="180" height="120" class="table"/>
+  <text x="460" y="140" text-anchor="middle" class="header">course_offerings</text>
+  <text x="380" y="160" class="field pk">offering_id (PK)</text>
+  <text x="380" y="178" class="field fk">course_id (FK)</text>
+  <text x="380" y="196" class="field fk">teacher_id (FK)</text>
+  <text x="380" y="214" class="field">academic_year, semester</text>
+  <text x="380" y="232" class="field">max_students, current_students</text>
+
+  <!-- Enrollments -->
+  <rect x="370" y="280" width="180" height="90" class="table"/>
+  <text x="460" y="300" text-anchor="middle" class="header">enrollments</text>
+  <text x="380" y="320" class="field pk">offering_id (PK, FK)</text>
+  <text x="380" y="338" class="field pk fk">student_id (PK, FK)</text>
+  <text x="380" y="356" class="field">score, enrollment_date</text>
+
+  <!-- Admins -->
+  <rect x="700" y="350" width="150" height="80" class="table"/>
+  <text x="775" y="370" text-anchor="middle" class="header">admins</text>
+  <text x="710" y="390" class="field pk">admin_id (PK)</text>
+  <text x="710" y="408" class="field">username, password</text>
+  <text x="710" y="426" class="field">name</text>
+
+  <!-- Relations -->
+  <!-- students.class_id -> classes.class_id -->
+  <line x1="140" y1="180" x2="140" y2="150" class="rel"/>
+  <!-- students.student_id -> enrollments.student_id -->
+  <line x1="240" y1="240" x2="370" y2="325" class="rel"/>
+  <!-- course_offerings.course_id -> courses.course_id -->
+  <line x1="550" y1="160" x2="700" y2="250" class="rel"/>
+  <!-- course_offerings.teacher_id -> teachers.teacher_id -->
+  <line x1="550" y1="180" x2="700" y2="120" class="rel"/>
+  <!-- enrollments.offering_id -> course_offerings.offering_id -->
+  <line x1="460" y1="280" x2="460" y2="240" class="rel"/>
+
+</svg> 
