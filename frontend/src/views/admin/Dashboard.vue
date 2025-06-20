@@ -8,7 +8,7 @@
       class="border-e"
     >
       <v-list-item
-        prepend-avatar="mdi-account-supervisor"
+        prepend-avatar="mdi-account-circle"
         :title="authStore.userName"
         subtitle="系统管理员"
         class="mb-2"

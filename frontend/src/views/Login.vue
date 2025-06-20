@@ -78,7 +78,7 @@
             <v-spacer />
             <div class="text-caption text-medium-emphasis">
               <v-chip size="small" color="primary" variant="outlined" class="mr-2">
-                <v-icon start>mdi-account-supervisor</v-icon>
+                <v-icon start>mdi-account-circle</v-icon>
                 管理员: admin / admin123
               </v-chip>
               <br class="mb-2">

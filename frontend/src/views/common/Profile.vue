@@ -129,7 +129,7 @@
           </v-card-title>
 
           <v-card-text class="pa-6">
-            <v-form ref="passwordForm" v-model="passwordValid" @submit.prevent="changePassword">
+            <v-form ref="passwordFormRef" v-model="passwordValid" @submit.prevent="changePassword">
               <v-text-field
                 v-model="passwordForm.old_password"
                 label="当前密码"
@@ -202,7 +202,7 @@ import api from '@/utils/api'
 const authStore = useAuthStore()
 
 const profileForm = ref(null)
-const passwordForm = ref(null)
+const passwordFormRef = ref(null)
 const profileValid = ref(false)
 const passwordValid = ref(false)
 const passwordLoading = ref(false)
@@ -300,7 +300,7 @@ const changePassword = async () => {
       confirm_password: ''
     })
     
-    passwordForm.value?.reset()
+    passwordFormRef.value?.reset()
   } catch (error) {
     passwordMessage.value = error.message || '密码修改失败'
     passwordMessageType.value = 'error'
