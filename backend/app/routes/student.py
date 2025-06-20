@@ -57,9 +57,10 @@ def get_my_courses():
         
         query = db.session.query(
             Enrollment, CourseOffering, Course, Teacher
-        ).join(CourseOffering).join(Course).join(Teacher).filter(
-            Enrollment.student_id == student_id
-        )
+        ).join(CourseOffering, Enrollment.offering_id == CourseOffering.offering_id)\
+         .join(Course, CourseOffering.course_id == Course.course_id)\
+         .join(Teacher, CourseOffering.teacher_id == Teacher.teacher_id)\
+         .filter(Enrollment.student_id == student_id)
         
         if academic_year:
             query = query.filter(CourseOffering.academic_year == academic_year)
@@ -250,14 +251,23 @@ def get_scores():
     try:
         academic_year = request.args.get('academic_year', '')
         semester = request.args.get('semester', '', type=int)
-        
+
         query = db.session.query(
-            Enrollment, CourseOffering, Course, Teacher
-        ).join(CourseOffering).join(Course).join(Teacher).filter(
+            Enrollment.score,
+            Course.course_name,
+            Course.credits,
+            Course.exam_type,
+            Teacher.name.label('teacher_name'),
+            CourseOffering.academic_year,
+            CourseOffering.semester
+        ).join(CourseOffering, Enrollment.offering_id == CourseOffering.offering_id)\
+         .join(Course, CourseOffering.course_id == Course.course_id)\
+         .join(Teacher, CourseOffering.teacher_id == Teacher.teacher_id)\
+         .filter(
             Enrollment.student_id == student_id,
             Enrollment.score.isnot(None)
         )
-        
+
         if academic_year:
             query = query.filter(CourseOffering.academic_year == academic_year)
         if semester in [0, 1]:
@@ -272,25 +282,25 @@ def get_scores():
         total_credits = 0
         total_score_credits = 0
         
-        for enrollment, offering, course, teacher in enrollments:
+        for enrollment in enrollments:
             score_data = {
-                'offering_id': offering.offering_id,
-                'course_id': course.course_id,
-                'course_name': course.course_name,
-                'teacher_name': teacher.name,
-                'academic_year': offering.academic_year,
-                'semester': offering.semester,
-                'credits': course.credits,
+                'offering_id': enrollment.offering_id,
+                'course_id': enrollment.course_id,
+                'course_name': enrollment.course_name,
+                'teacher_name': enrollment.teacher_name,
+                'academic_year': enrollment.academic_year,
+                'semester': enrollment.semester,
+                'credits': enrollment.credits,
                 'score': enrollment.score,
-                'exam_type': course.exam_type,
+                'exam_type': enrollment.exam_type,
                 'passed': enrollment.score >= 60
             }
             result.append(score_data)
             
             # 计算GPA相关数据
             if enrollment.score >= 60:
-                total_credits += course.credits
-                total_score_credits += enrollment.score * course.credits
+                total_credits += enrollment.credits
+                total_score_credits += enrollment.score * enrollment.credits
         
         # 计算加权平均分
         gpa = total_score_credits / total_credits if total_credits > 0 else 0
