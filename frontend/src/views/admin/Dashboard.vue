@@ -6,13 +6,17 @@
       permanent
       width="280"
       class="border-e"
-    >
-      <v-list-item
-        prepend-avatar="mdi-account-circle"
+    >      <v-list-item
         :title="authStore.userName"
         subtitle="系统管理员"
         class="mb-2"
-      />
+      >
+        <template #prepend>
+          <v-avatar>
+            <v-icon>mdi-account-circle</v-icon>
+          </v-avatar>
+        </template>
+      </v-list-item>
       
       <v-divider />
 
