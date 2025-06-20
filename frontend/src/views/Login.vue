@@ -12,7 +12,7 @@
           </v-card-title>
 
           <v-card-text class="pa-6">
-            <v-form ref="form" v-model="valid" @submit.prevent="login">
+            <v-form ref="form" v-model="valid" @submit.prevent="handleSubmit">
               <v-text-field
                 v-model="loginForm.username"
                 label="用户名/学号/工号"
@@ -53,8 +53,9 @@
                 size="large"
                 color="primary"
                 :loading="loading"
-                :disabled="!valid || !canSubmit"
+                :disabled="!valid || !canSubmit || countdown > 0"
                 class="mb-3"
+                @click.prevent="login"
               >
                 <span v-if="countdown > 0">
                   请等待 {{ countdown }} 秒后重试
@@ -101,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -115,6 +116,16 @@ const showPassword = ref(false)
 const errorMessage = ref('')
 const countdown = ref(0)
 const canSubmit = ref(true)
+
+let countdownTimer = null
+
+// 组件销毁时清理计时器
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+})
 
 const loginForm = reactive({
   username: '',
@@ -142,14 +153,55 @@ const userTypeRules = [
   v => !!v || '请选择用户类型'
 ]
 
+const handleSubmit = (e) => {
+  e.preventDefault()
+  if (!loading.value && canSubmit.value && countdown.value === 0) {
+    login()
+  }
+}
+
+const startCountdown = () => {
+  console.log('开始倒计时')
+  // 清除现有的计时器
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+  
+  canSubmit.value = false
+  countdown.value = 5
+  
+  countdownTimer = setInterval(() => {
+    countdown.value--
+    console.log('倒计时:', countdown.value)
+    if (countdown.value <= 0) {
+      console.log('倒计时结束')
+      clearInterval(countdownTimer)
+      countdownTimer = null
+      canSubmit.value = true
+      countdown.value = 0
+    }
+  }, 1000)
+}
+
 const login = async () => {
-  if (!valid.value || !canSubmit.value) return
+  // 检查是否可以提交
+  if (!valid.value || !canSubmit.value || countdown.value > 0) {
+    return
+  }
 
   loading.value = true
   errorMessage.value = ''
 
   try {
     await authStore.login(loginForm)
+    
+    // 登录成功，清除倒计时
+    if (countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+    countdown.value = 0
+    canSubmit.value = true
     
     // 根据用户类型跳转到对应页面
     const redirectMap = {
@@ -163,18 +215,14 @@ const login = async () => {
   } catch (error) {
     errorMessage.value = error.message || '登录失败，请检查用户名和密码'
     
-    // 启动5秒倒计时
-    canSubmit.value = false
-    countdown.value = 5
-    
-    const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
-        canSubmit.value = true
-        countdown.value = 0
-      }
-    }, 1000)
+    // 只有在密码错误等情况下才启动倒计时
+    if (error.message && (
+      error.message.includes('密码') || 
+      error.message.includes('用户名') ||
+      error.message.includes('错误')
+    )) {
+      startCountdown()
+    }
   } finally {
     loading.value = false
   }
