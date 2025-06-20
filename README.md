@@ -170,14 +170,11 @@ mysql -u root -p course_selection_system < database/init.sql
 # 进入后端目录
 cd backend
 
-# 创建虚拟环境（推荐）
-python -m venv venv
+# 创建conda环境（推荐）
+conda create -n course_env python=3.8
 
-# 激活虚拟环境
-# Windows
-venv\Scripts\activate
-# Linux/macOS
-source venv/bin/activate
+# 激活conda环境
+conda activate course_env
 
 # 安装依赖
 pip install -r requirements.txt
