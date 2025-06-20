@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from functools import wraps
 from app import db
 from app.models import Admin, Student, Teacher, Course, Class, CourseOffering, Enrollment
 from sqlalchemy import func, desc
@@ -8,17 +9,20 @@ admin_bp = Blueprint('admin', __name__)
 
 def admin_required(f):
     """管理员权限装饰器"""
+    @wraps(f)
+    @jwt_required()
     def decorated_function(*args, **kwargs):
-        current_user = get_jwt_identity()
-        if current_user['type'] != 'admin':
-            return jsonify({'message': '权限不足，需要管理员权限'}), 403
-        return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
+        try:
+            claims = get_jwt()
+            if claims.get('type') != 'admin':
+                return jsonify({'message': '权限不足，需要管理员权限'}), 403
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': '身份验证失败'}), 401
     return decorated_function
 
 # 教师管理
 @admin_bp.route('/teachers', methods=['GET'])
-@jwt_required()
 @admin_required
 def get_teachers():
     """获取教师列表"""
@@ -56,7 +60,6 @@ def get_teachers():
         return jsonify({'message': f'获取教师列表失败: {str(e)}'}), 500
 
 @admin_bp.route('/teachers', methods=['POST'])
-@jwt_required()
 @admin_required
 def create_teacher():
     """创建教师"""
@@ -103,7 +106,6 @@ def create_teacher():
         return jsonify({'message': f'创建教师失败: {str(e)}'}), 500
 
 @admin_bp.route('/teachers/<teacher_id>', methods=['PUT'])
-@jwt_required()
 @admin_required
 def update_teacher(teacher_id):
     """更新教师信息"""
@@ -143,7 +145,6 @@ def update_teacher(teacher_id):
         return jsonify({'message': f'更新教师信息失败: {str(e)}'}), 500
 
 @admin_bp.route('/teachers/<teacher_id>', methods=['DELETE'])
-@jwt_required()
 @admin_required
 def delete_teacher(teacher_id):
     """删除教师"""
@@ -164,7 +165,6 @@ def delete_teacher(teacher_id):
 
 # 学生管理
 @admin_bp.route('/students', methods=['GET'])
-@jwt_required()
 @admin_required
 def get_students():
     """获取学生列表"""
@@ -207,7 +207,6 @@ def get_students():
         return jsonify({'message': f'获取学生列表失败: {str(e)}'}), 500
 
 @admin_bp.route('/students', methods=['POST'])
-@jwt_required()
 @admin_required
 def create_student():
     """创建学生"""
@@ -260,7 +259,6 @@ def create_student():
         return jsonify({'message': f'创建学生失败: {str(e)}'}), 500
 
 @admin_bp.route('/students/<student_id>', methods=['PUT'])
-@jwt_required()
 @admin_required
 def update_student(student_id):
     """更新学生信息"""
@@ -304,7 +302,6 @@ def update_student(student_id):
         return jsonify({'message': f'更新学生信息失败: {str(e)}'}), 500
 
 @admin_bp.route('/students/<student_id>', methods=['DELETE'])
-@jwt_required()
 @admin_required
 def delete_student(student_id):
     """删除学生"""
@@ -322,7 +319,6 @@ def delete_student(student_id):
 
 # 课程管理
 @admin_bp.route('/courses', methods=['GET'])
-@jwt_required()
 @admin_required
 def get_courses():
     """获取课程列表"""
@@ -359,7 +355,6 @@ def get_courses():
         return jsonify({'message': f'获取课程列表失败: {str(e)}'}), 500
 
 @admin_bp.route('/courses', methods=['POST'])
-@jwt_required()
 @admin_required
 def create_course():
     """创建课程"""
@@ -403,7 +398,6 @@ def create_course():
         return jsonify({'message': f'创建课程失败: {str(e)}'}), 500
 
 @admin_bp.route('/courses/<course_id>', methods=['PUT'])
-@jwt_required()
 @admin_required
 def update_course(course_id):
     """更新课程信息"""
@@ -438,7 +432,6 @@ def update_course(course_id):
         return jsonify({'message': f'更新课程信息失败: {str(e)}'}), 500
 
 @admin_bp.route('/courses/<course_id>', methods=['DELETE'])
-@jwt_required()
 @admin_required
 def delete_course(course_id):
     """删除课程"""
@@ -459,25 +452,22 @@ def delete_course(course_id):
 
 # 班级管理
 @admin_bp.route('/classes', methods=['GET'])
-@jwt_required()
 @admin_required
 def get_classes():
     """获取班级列表"""
     try:
         classes = Class.query.all()
-        return jsonify({
-            'classes': [{
-                'class_id': c.class_id,
-                'class_name': c.class_name,
-                'student_count': len(c.students),
-                'created_at': c.created_at.isoformat() if c.created_at else None
-            } for c in classes]
-        }), 200
+        return jsonify([{
+            'class_id': c.class_id,
+            'class_name': c.class_name,
+            'description': getattr(c, 'description', ''),
+            'student_count': len(c.students),
+            'created_at': c.created_at.isoformat() if c.created_at else None
+        } for c in classes]), 200
     except Exception as e:
         return jsonify({'message': f'获取班级列表失败: {str(e)}'}), 500
 
 @admin_bp.route('/classes', methods=['POST'])
-@jwt_required()
 @admin_required
 def create_class():
     """创建班级"""
@@ -512,9 +502,71 @@ def create_class():
         db.session.rollback()
         return jsonify({'message': f'创建班级失败: {str(e)}'}), 500
 
+@admin_bp.route('/classes/<class_id>', methods=['PUT'])
+@admin_required
+def update_class(class_id):
+    """更新班级信息"""
+    try:
+        class_obj = Class.query.get_or_404(class_id)
+        data = request.get_json()
+        
+        # 更新字段
+        if 'class_name' in data:
+            class_obj.class_name = data['class_name']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': '班级信息更新成功',
+            'class': {
+                'class_id': class_obj.class_id,
+                'class_name': class_obj.class_name
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'更新班级信息失败: {str(e)}'}), 500
+
+@admin_bp.route('/classes/<class_id>', methods=['DELETE'])
+@admin_required
+def delete_class(class_id):
+    """删除班级"""
+    try:
+        class_obj = Class.query.get_or_404(class_id)
+        
+        # 检查是否有学生
+        if class_obj.students:
+            return jsonify({'message': '该班级还有学生，无法删除'}), 400
+        
+        db.session.delete(class_obj)
+        db.session.commit()
+        
+        return jsonify({'message': '班级删除成功'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'删除班级失败: {str(e)}'}), 500
+
+@admin_bp.route('/classes/<class_id>/students', methods=['GET'])
+@admin_required
+def get_class_students(class_id):
+    """获取班级学生列表"""
+    try:
+        class_obj = Class.query.get_or_404(class_id)
+        students = Student.query.filter_by(class_id=class_id).all()
+        
+        return jsonify([{
+            'student_id': s.student_id,
+            'name': s.name,
+            'gender': s.gender,
+            'age': s.age,
+            'hometown': s.hometown,
+            'total_credits': s.total_credits
+        } for s in students]), 200
+    except Exception as e:
+        return jsonify({'message': f'获取班级学生失败: {str(e)}'}), 500
+
 # 统计信息
 @admin_bp.route('/statistics', methods=['GET'])
-@jwt_required()
 @admin_required
 def get_statistics():
     """获取系统统计信息"""

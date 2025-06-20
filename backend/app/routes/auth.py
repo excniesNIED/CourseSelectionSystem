@@ -1,9 +1,52 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, get_jwt
+from functools import wraps
 from app import db
 from app.models import Admin, Student, Teacher
 
 auth_bp = Blueprint('auth', __name__)
+
+def admin_required(f):
+    """管理员权限装饰器"""
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        try:
+            claims = get_jwt()
+            if claims.get('type') != 'admin':
+                return jsonify({'message': '需要管理员权限'}), 403
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': '身份验证失败'}), 401
+    return decorated_function
+
+def teacher_required(f):
+    """教师权限装饰器"""
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        try:
+            claims = get_jwt()
+            if claims.get('type') != 'teacher':
+                return jsonify({'message': '需要教师权限'}), 403
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': '身份验证失败'}), 401
+    return decorated_function
+
+def student_required(f):
+    """学生权限装饰器"""
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        try:
+            claims = get_jwt()
+            if claims.get('type') != 'student':
+                return jsonify({'message': '需要学生权限'}), 403
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': '身份验证失败'}), 401
+    return decorated_function
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -58,11 +101,11 @@ def login():
                     'class_name': user.class_info.class_name if user.class_info else '',
                     'type': 'student'
                 }
-        
         if user:
-            # 创建访问令牌
+            # 创建访问令牌，使用用户ID作为identity
             access_token = create_access_token(
-                identity={'id': user_info['id'], 'type': user_type}
+                identity=user_info['id'],
+                additional_claims={'type': user_type, 'user_data': user_info}
             )
             
             return jsonify({
@@ -80,7 +123,10 @@ def login():
 @jwt_required()
 def change_password():
     """修改密码"""
-    current_user = get_jwt_identity()
+    current_user_id = get_jwt_identity()
+    claims = get_jwt()
+    user_type = claims.get('type')
+    
     data = request.get_json()
     
     if not data or not data.get('old_password') or not data.get('new_password'):
@@ -91,15 +137,13 @@ def change_password():
     
     try:
         user = None
-        user_type = current_user['type']
-        user_id = current_user['id']
         
         if user_type == 'admin':
-            user = Admin.query.filter_by(admin_id=user_id).first()
+            user = Admin.query.filter_by(admin_id=current_user_id).first()
         elif user_type == 'teacher':
-            user = Teacher.query.filter_by(teacher_id=user_id).first()
+            user = Teacher.query.filter_by(teacher_id=current_user_id).first()
         elif user_type == 'student':
-            user = Student.query.filter_by(student_id=user_id).first()
+            user = Student.query.filter_by(student_id=current_user_id).first()
         
         if not user:
             return jsonify({'message': '用户不存在'}), 404
@@ -121,8 +165,11 @@ def change_password():
 @jwt_required()
 def verify_token():
     """验证token有效性"""
-    current_user = get_jwt_identity()
+    current_user_id = get_jwt_identity()
+    claims = get_jwt()
     return jsonify({
         'message': 'Token有效',
-        'user': current_user
+        'user_id': current_user_id,
+        'user_type': claims.get('type'),
+        'user_data': claims.get('user_data')
     }), 200

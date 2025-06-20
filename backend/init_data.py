@@ -46,14 +46,13 @@ def init_data():
             ]
             for teacher in teachers:
                 teacher.set_password('teacher123')
-            db.session.add_all(teachers)
-              # 5. 创建学生
+            db.session.add_all(teachers)            # 5. 创建学生
             students = [
-                Student(student_id='2021001001', name='张三', gender='男', age=20, hometown='北京', class_id='CS01'),
-                Student(student_id='2021001002', name='李四', gender='女', age=19, hometown='上海', class_id='CS01'),
-                Student(student_id='2021001003', name='王五', gender='男', age=20, hometown='广州', class_id='CS02'),
-                Student(student_id='2021001004', name='赵六', gender='女', age=19, hometown='深圳', class_id='CS02'),
-                Student(student_id='2021001005', name='钱七', gender='男', age=20, hometown='杭州', class_id='SE01'),
+                Student(student_id='202301001001', name='张三', gender='男', age=20, hometown='北京', class_id='CS01'),
+                Student(student_id='202301001002', name='李四', gender='女', age=19, hometown='上海', class_id='CS01'),
+                Student(student_id='202301001003', name='王五', gender='男', age=20, hometown='广州', class_id='CS02'),
+                Student(student_id='202301001004', name='赵六', gender='女', age=19, hometown='深圳', class_id='CS02'),
+                Student(student_id='202301001005', name='钱七', gender='男', age=20, hometown='杭州', class_id='SE01'),
             ]
             for student in students:
                 student.set_password('student123')
@@ -65,7 +64,7 @@ def init_data():
             print("✅ 测试数据初始化完成！")
             print("👤 管理员: admin / admin123")
             print("👨‍🏫 教师: T001-T004 / teacher123")
-            print("👨‍🎓 学生: 2021001001-2021001005 / student123")
+            print("👨‍🎓 学生: 202301001001-202301001005 / student123")
     except Exception as e:
         print(f"❌ 初始化失败: {e}")
         import traceback
