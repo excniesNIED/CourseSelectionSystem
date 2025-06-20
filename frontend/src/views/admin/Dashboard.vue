@@ -45,13 +45,10 @@
     </v-navigation-drawer>
 
     <!-- 主内容区域 -->
-    <v-main class="bg-surface-variant">
-      <v-app-bar flat class="border-b bg-surface">
+    <v-main class="bg-surface-variant">      <v-app-bar flat class="border-b bg-surface">
         <v-app-bar-nav-icon @click="drawer = !drawer" />
         <v-toolbar-title>{{ currentPageTitle }}</v-toolbar-title>
         <v-spacer />
-        <v-btn icon="mdi-bell-outline" variant="text" />
-        <v-btn icon="mdi-account-circle" variant="text" />
       </v-app-bar>
 
       <v-container fluid class="pa-6">
@@ -128,8 +125,8 @@ const logout = () => {
 }
 
 .v-list-item--active {
-  background: rgba(103, 80, 164, 0.12) !important;
-  color: #6750A4 !important;
+  background: rgba(21, 173, 102, 0.12) !important;
+  color: #15AD66 !important;
 }
 
 .border-e {

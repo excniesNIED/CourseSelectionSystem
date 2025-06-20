@@ -281,7 +281,7 @@ const titleOptions = [
 ]
 
 const filteredTeachers = computed(() => {
-  let filtered = teachers.value
+  let filtered = Array.isArray(teachers.value) ? teachers.value : []
 
   if (search.value) {
     filtered = filtered.filter(teacher =>
@@ -306,7 +306,7 @@ const loadTeachers = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/teachers')
-    teachers.value = response
+    teachers.value = response.teachers || []
   } catch (error) {
     showMessage('加载教师列表失败', 'error')
   } finally {

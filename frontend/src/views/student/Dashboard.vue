@@ -1,99 +1,135 @@
 <template>
   <v-layout>
-    <v-app-bar color="primary" prominent>
-      <template #prepend>
-        <v-app-bar-nav-icon @click="drawer = !drawer" />
-      </template>
-      
-      <v-app-bar-title>
-        <v-icon class="mr-3">mdi-school</v-icon>
-        课程选择系统 - 学生端
-      </v-app-bar-title>
-
-      <v-spacer />
-
-      <v-menu>
-        <template #activator="{ props }">
-          <v-btn icon v-bind="props">
-            <v-avatar size="32">
-              <v-icon>mdi-account</v-icon>
-            </v-avatar>
-          </v-btn>
+    <!-- 侧边导航栏 -->
+    <v-navigation-drawer
+      v-model="drawer"
+      permanent
+      width="280"
+      class="border-e"
+    >
+      <v-list-item
+        :title="authStore.user?.name || authStore.userName"
+        subtitle="学生"
+        class="mb-2"
+      >
+        <template #prepend>
+          <v-avatar>
+            <v-icon>mdi-account-school</v-icon>
+          </v-avatar>
         </template>
-        
-        <v-list>
-          <v-list-item>
-            <v-list-item-title>{{ authStore.user?.name }}</v-list-item-title>
-            <v-list-item-subtitle>学生</v-list-item-subtitle>
-          </v-list-item>
-          <v-divider />
-          <v-list-item @click="$router.push('/student/profile')">
-            <v-list-item-title>个人信息</v-list-item-title>
-            <template #prepend>
-              <v-icon>mdi-account-circle</v-icon>
-            </template>
-          </v-list-item>
-          <v-list-item @click="authStore.logout">
-            <v-list-item-title>退出登录</v-list-item-title>
-            <template #prepend>
-              <v-icon>mdi-logout</v-icon>
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </v-app-bar>
+      </v-list-item>
+      
+      <v-divider />
 
-    <v-navigation-drawer v-model="drawer" :permanent="!mobile">
-      <v-list>
+      <v-list nav>
         <v-list-item
           v-for="item in menuItems"
-          :key="item.title"
+          :key="item.value"
           :to="item.to"
           :prepend-icon="item.icon"
           :title="item.title"
-          exact
+          rounded="xl"
+          class="ma-2"
         />
       </v-list>
+
+      <template #append>
+        <v-list>
+          <v-list-item
+            prepend-icon="mdi-account-circle"
+            title="个人信息"
+            @click="$router.push('/student/profile')"
+            class="ma-2"
+          />
+          <v-list-item
+            prepend-icon="mdi-logout"
+            title="退出登录"
+            @click="logout"
+            class="ma-2"
+          />
+        </v-list>
+      </template>
     </v-navigation-drawer>
 
-    <v-main>
-      <div class="pa-6">
+    <!-- 主内容区域 -->
+    <v-main class="bg-surface-variant">
+      <v-app-bar flat class="border-b bg-surface">
+        <v-app-bar-nav-icon @click="drawer = !drawer" />
+        <v-toolbar-title>{{ currentPageTitle }}</v-toolbar-title>
+        <v-spacer />
+      </v-app-bar>
+
+      <v-container fluid class="pa-6">
         <router-view />
-      </div>
+      </v-container>
     </v-main>
   </v-layout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useDisplay } from 'vuetify'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
-const { mobile } = useDisplay()
 
-const drawer = ref(!mobile.value)
+const drawer = ref(true)
 
 const menuItems = [
   {
     title: '概览',
     icon: 'mdi-view-dashboard',
+    value: 'overview',
     to: '/student/overview'
   },
   {
     title: '课程浏览',
     icon: 'mdi-book-open-variant',
+    value: 'courses',
     to: '/student/courses'
   },
   {
     title: '选课管理',
     icon: 'mdi-bookmark-plus',
+    value: 'enrollment',
     to: '/student/enrollment'
   },
   {
     title: '我的成绩',
     icon: 'mdi-trophy',
+    value: 'grades',
     to: '/student/grades'
   }
 ]
+
+const currentPageTitle = computed(() => {
+  const currentItem = menuItems.find(item => item.to === route.path)
+  return currentItem ? currentItem.title : '学生控制台'
+})
+
+const logout = () => {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
+
+<style scoped>
+.v-navigation-drawer {
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.v-list-item--active {
+  background: rgba(21, 173, 102, 0.12) !important;
+  color: #15AD66 !important;
+}
+
+.border-e {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.border-b {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+</style>

@@ -292,14 +292,14 @@ const genderOptions = [
 ]
 
 const classOptions = computed(() => 
-  classes.value.map(cls => ({
+  Array.isArray(classes.value) ? classes.value.map(cls => ({
     title: cls.class_name,
     value: cls.class_id
-  }))
+  })) : []
 )
 
 const filteredStudents = computed(() => {
-  let filtered = students.value
+  let filtered = Array.isArray(students.value) ? students.value : []
 
   if (search.value) {
     filtered = filtered.filter(student =>
@@ -324,7 +324,7 @@ const loadStudents = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/students')
-    students.value = response
+    students.value = response.students || []
   } catch (error) {
     showMessage('加载学生列表失败', 'error')
   } finally {
@@ -335,7 +335,7 @@ const loadStudents = async () => {
 const loadClasses = async () => {
   try {
     const response = await api.get('/admin/classes')
-    classes.value = response
+    classes.value = response.classes || []
   } catch (error) {
     showMessage('加载班级列表失败', 'error')
   }

@@ -47,18 +47,19 @@
                 :rules="userTypeRules"
                 required
                 class="mb-4"
-              />
-
-              <v-btn
+              />              <v-btn
                 type="submit"
                 block
                 size="large"
                 color="primary"
                 :loading="loading"
-                :disabled="!valid"
+                :disabled="!valid || !canSubmit"
                 class="mb-3"
               >
-                登录
+                <span v-if="countdown > 0">
+                  请等待 {{ countdown }} 秒后重试
+                </span>
+                <span v-else>登录</span>
               </v-btn>
             </v-form>
 
@@ -112,6 +113,8 @@ const valid = ref(false)
 const loading = ref(false)
 const showPassword = ref(false)
 const errorMessage = ref('')
+const countdown = ref(0)
+const canSubmit = ref(true)
 
 const loginForm = reactive({
   username: '',
@@ -140,7 +143,7 @@ const userTypeRules = [
 ]
 
 const login = async () => {
-  if (!valid.value) return
+  if (!valid.value || !canSubmit.value) return
 
   loading.value = true
   errorMessage.value = ''
@@ -159,6 +162,19 @@ const login = async () => {
     router.push(redirectPath)
   } catch (error) {
     errorMessage.value = error.message || '登录失败，请检查用户名和密码'
+    
+    // 启动5秒倒计时
+    canSubmit.value = false
+    countdown.value = 5
+    
+    const timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer)
+        canSubmit.value = true
+        countdown.value = 0
+      }
+    }, 1000)
   } finally {
     loading.value = false
   }
@@ -167,7 +183,7 @@ const login = async () => {
 
 <style scoped>
 .login-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #15AD66 0%, #0A7B4A 100%);
   min-height: 100vh;
 }
 
@@ -182,7 +198,7 @@ const login = async () => {
 }
 
 .v-card-title {
-  background: linear-gradient(45deg, #6750A4, #7D5260);
+  background: linear-gradient(45deg, #15AD66, #0A7B4A);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;

@@ -295,14 +295,14 @@ const typeOptions = [
 ]
 
 const teacherOptions = computed(() => 
-  teachers.value.map(teacher => ({
+  Array.isArray(teachers.value) ? teachers.value.map(teacher => ({
     title: teacher.name,
     value: teacher.teacher_id
-  }))
+  })) : []
 )
 
 const filteredCourses = computed(() => {
-  let filtered = courses.value
+  let filtered = Array.isArray(courses.value) ? courses.value : []
 
   if (search.value) {
     filtered = filtered.filter(course =>
@@ -336,7 +336,7 @@ const loadCourses = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/courses')
-    courses.value = response
+    courses.value = response.courses || []
   } catch (error) {
     showMessage('加载课程列表失败', 'error')
   } finally {
@@ -347,7 +347,7 @@ const loadCourses = async () => {
 const loadTeachers = async () => {
   try {
     const response = await api.get('/admin/teachers')
-    teachers.value = response
+    teachers.value = response.teachers || []
   } catch (error) {
     showMessage('加载教师列表失败', 'error')
   }

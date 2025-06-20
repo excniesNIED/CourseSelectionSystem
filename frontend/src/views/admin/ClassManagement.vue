@@ -252,9 +252,10 @@ const studentHeaders = [
 ]
 
 const filteredClasses = computed(() => {
-  if (!search.value) return classes.value
+  const classArray = Array.isArray(classes.value) ? classes.value : []
+  if (!search.value) return classArray
 
-  return classes.value.filter(cls =>
+  return classArray.filter(cls =>
     cls.class_name.includes(search.value) ||
     cls.class_id.includes(search.value) ||
     cls.description?.includes(search.value)
@@ -265,7 +266,7 @@ const loadClasses = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/classes')
-    classes.value = response
+    classes.value = response.classes || []
   } catch (error) {
     showMessage('加载班级列表失败', 'error')
   } finally {
@@ -277,7 +278,7 @@ const loadClassStudents = async (classId) => {
   studentsLoading.value = true
   try {
     const response = await api.get(`/admin/classes/${classId}/students`)
-    classStudents.value = response
+    classStudents.value = response.students || []
   } catch (error) {
     showMessage('加载学生列表失败', 'error')
   } finally {
