@@ -31,9 +31,8 @@ api.interceptors.response.use(
   },
   (error) => {
     const authStore = useAuthStore()
-    
-    if (error.response?.status === 401) {
-      // token过期或无效，清除认证信息并跳转到登录页
+    // 对 401 做全局处理，跳转登录，但排除登录接口本身
+    if (error.response?.status === 401 && !error.config?.url?.endsWith('/auth/login')) {
       authStore.logout()
       window.location.href = '/login'
     }

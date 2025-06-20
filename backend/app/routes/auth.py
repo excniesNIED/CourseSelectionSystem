@@ -86,7 +86,6 @@ def login():
                     'phone': user.phone,
                     'type': 'teacher'
                 }
-        
         elif user_type == 'student':
             user = Student.query.filter_by(student_id=username).first()
             if user and user.check_password(password):
@@ -98,10 +97,18 @@ def login():
                     'hometown': user.hometown,
                     'total_credits': user.total_credits,
                     'class_id': user.class_id,
-                    'class_name': user.class_info.class_name if user.class_info else '',
                     'type': 'student'
                 }
-        if user:
+                # 安全地获取班级名称
+                try:
+                    if user.class_info:
+                        user_info['class_name'] = user.class_info.class_name
+                    else:
+                        user_info['class_name'] = ''
+                except:
+                    user_info['class_name'] = ''
+        
+        if user and user_info:
             # 创建访问令牌，使用用户ID作为identity
             access_token = create_access_token(
                 identity=user_info['id'],

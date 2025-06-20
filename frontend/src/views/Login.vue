@@ -47,15 +47,16 @@
                 :rules="userTypeRules"
                 required
                 class="mb-4"
-              />              <v-btn
-                type="submit"
+              />              
+              <v-btn
+                type="button"
                 block
                 size="large"
                 color="primary"
                 :loading="loading"
                 :disabled="!valid || !canSubmit || countdown > 0"
                 class="mb-3"
-                @click.prevent="login"
+                @click="handleSubmit"
               >
                 <span v-if="countdown > 0">
                   请等待 {{ countdown }} 秒后重试
@@ -116,15 +117,25 @@ const showPassword = ref(false)
 const errorMessage = ref('')
 const countdown = ref(0)
 const canSubmit = ref(true)
+const lastSubmitTime = ref(0) // 添加最后提交时间记录
 
 let countdownTimer = null
 
-// 组件销毁时清理计时器
-onUnmounted(() => {
+// 强制重置所有状态
+const resetLoginState = () => {
   if (countdownTimer) {
     clearInterval(countdownTimer)
     countdownTimer = null
   }
+  countdown.value = 0
+  canSubmit.value = true
+  loading.value = false
+  errorMessage.value = ''
+}
+
+// 组件销毁时清理计时器
+onUnmounted(() => {
+  resetLoginState()
 })
 
 const loginForm = reactive({
@@ -154,10 +165,35 @@ const userTypeRules = [
 ]
 
 const handleSubmit = (e) => {
-  e.preventDefault()
-  if (!loading.value && canSubmit.value && countdown.value === 0) {
-    login()
+  if (e) {
+    e.preventDefault()
+    e.stopPropagation()
   }
+  
+  const currentTime = Date.now()
+  
+  console.log('handleSubmit called:', {
+    valid: valid.value,
+    canSubmit: canSubmit.value,
+    countdown: countdown.value,
+    loading: loading.value,
+    timeSinceLastSubmit: currentTime - lastSubmitTime.value
+  })
+  
+  // 防抖：1秒内只能提交一次
+  if (currentTime - lastSubmitTime.value < 1000) {
+    console.log('提交过于频繁，被阻止')
+    return false
+  }
+  
+  if (!valid.value || !canSubmit.value || countdown.value > 0 || loading.value) {
+    console.log('提交被阻止')
+    return false
+  }
+  
+  lastSubmitTime.value = currentTime
+  login()
+  return false
 }
 
 const startCountdown = () => {
@@ -171,21 +207,17 @@ const startCountdown = () => {
   countdown.value = 5
   
   countdownTimer = setInterval(() => {
-    countdown.value--
-    console.log('倒计时:', countdown.value)
+    countdown.value -= 1
     if (countdown.value <= 0) {
-      console.log('倒计时结束')
-      clearInterval(countdownTimer)
-      countdownTimer = null
-      canSubmit.value = true
-      countdown.value = 0
+      resetLoginState()
     }
   }, 1000)
 }
 
 const login = async () => {
-  // 检查是否可以提交
-  if (!valid.value || !canSubmit.value || countdown.value > 0) {
+  // 再次检查表单有效性
+  const { valid: formIsValid } = await form.value.validate()
+  if (!formIsValid) {
     return
   }
 
@@ -195,32 +227,25 @@ const login = async () => {
   try {
     await authStore.login(loginForm)
     
-    // 登录成功，清除倒计时
-    if (countdownTimer) {
-      clearInterval(countdownTimer)
-      countdownTimer = null
-    }
-    countdown.value = 0
-    canSubmit.value = true
+    // 登录成功后，重置状态并导航
+    resetLoginState()
     
-    // 根据用户类型跳转到对应页面
-    const redirectMap = {
-      admin: '/admin',
-      teacher: '/teacher',
-      student: '/student'
+    const userType = authStore.user.type
+    if (userType === 'admin') {
+      router.push('/admin/overview')
+    } else if (userType === 'teacher') {
+      router.push('/teacher/overview')
+    } else {
+      router.push('/student/overview')
     }
-    
-    const redirectPath = redirectMap[authStore.userType]
-    router.push(redirectPath)
   } catch (error) {
-    errorMessage.value = error.message || '登录失败，请检查用户名和密码'
+    console.error('登录失败:', error)
     
-    // 只有在密码错误等情况下才启动倒计时
-    if (error.message && (
-      error.message.includes('密码') || 
-      error.message.includes('用户名') ||
-      error.message.includes('错误')
-    )) {
+    // 处理登录失败
+    errorMessage.value = error.message || '登录时发生未知错误'
+    
+    // 如果是密码错误，则开始倒计时
+    if (error.message && error.message.includes('用户名或密码错误')) {
       startCountdown()
     }
   } finally {

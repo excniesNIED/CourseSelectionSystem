@@ -29,8 +29,9 @@ export const useAuthStore = defineStore('auth', {
         
         return response
       } catch (error) {
-        this.logout()
-        throw error
+        // this.logout() // 注销这行，防止在登录失败时清除状态导致页面刷新
+        // 抛出后端返回的实际错误信息
+        throw error.response?.data || error
       }
     },
 
