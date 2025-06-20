@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app import db
 from app.models import Teacher, Course, CourseOffering, Enrollment, Student, Class
 from sqlalchemy import func, desc, and_
@@ -9,10 +9,13 @@ teacher_bp = Blueprint('teacher', __name__)
 def teacher_required(f):
     """教师权限装饰器"""
     def decorated_function(*args, **kwargs):
-        current_user = get_jwt_identity()
-        if current_user['type'] != 'teacher':
-            return jsonify({'message': '权限不足，需要教师权限'}), 403
-        return f(*args, **kwargs)
+        try:
+            claims = get_jwt()
+            if claims.get('type') != 'teacher':
+                return jsonify({'message': '需要教师权限'}), 403
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': '身份验证失败'}), 401
     decorated_function.__name__ = f.__name__
     return decorated_function
 
@@ -21,8 +24,7 @@ def teacher_required(f):
 @teacher_required
 def get_profile():
     """获取个人信息"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     try:
         teacher = Teacher.query.filter_by(teacher_id=teacher_id).first()
@@ -45,8 +47,7 @@ def get_profile():
 @teacher_required
 def get_my_courses():
     """查看任课信息"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     try:
         academic_year = request.args.get('academic_year', '')
@@ -81,8 +82,7 @@ def get_my_courses():
 @teacher_required
 def create_course_offering():
     """开设课程"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     data = request.get_json()
     required_fields = ['course_id', 'academic_year', 'semester', 'max_students']
@@ -125,8 +125,7 @@ def create_course_offering():
 @teacher_required
 def cancel_course_offering(offering_id):
     """取消开课"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     try:
         offering = CourseOffering.query.filter_by(
@@ -206,8 +205,7 @@ def get_class_students_ranking():
 @teacher_required
 def get_course_students():
     """按任课课程查询学生单门成绩及排名"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     try:
         offering = CourseOffering.query.filter_by(
@@ -253,8 +251,7 @@ def get_course_students():
 @teacher_required
 def update_scores():
     """录入/修改学生成绩"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     data = request.get_json()
     if not data or 'scores' not in data:
@@ -306,8 +303,7 @@ def update_scores():
 @teacher_required
 def get_course_statistics():
     """按学年查询个人教授课程的平均成绩"""
-    current_user = get_jwt_identity()
-    teacher_id = current_user['id']
+    teacher_id = get_jwt_identity()
     
     try:
         academic_year = request.args.get('academic_year', '')
@@ -350,3 +346,100 @@ def get_course_statistics():
         }), 200
     except Exception as e:
         return jsonify({'message': f'获取课程统计失败: {str(e)}'}), 500
+
+@teacher_bp.route('/stats', methods=['GET'])
+@jwt_required()
+@teacher_required
+def get_teacher_stats():
+    """获取教师统计信息"""
+    teacher_id = get_jwt_identity()
+    
+    try:
+        # 教授的课程数量
+        total_courses = CourseOffering.query.filter_by(teacher_id=teacher_id).count()
+        
+        # 当前学期学生总数
+        current_semester_students = db.session.query(func.sum(CourseOffering.current_students)).filter_by(
+            teacher_id=teacher_id,
+            academic_year='2024',
+            semester=1
+        ).scalar() or 0
+        
+        # 平均成绩
+        avg_score = db.session.query(func.avg(Enrollment.score)).join(
+            CourseOffering
+        ).filter(
+            CourseOffering.teacher_id == teacher_id,
+            Enrollment.score.isnot(None)
+        ).scalar() or 0
+        
+        # 已批改作业数（这里用有成绩的学生数代替）
+        graded_count = db.session.query(func.count(Enrollment.score)).join(
+            CourseOffering
+        ).filter(
+            CourseOffering.teacher_id == teacher_id,
+            Enrollment.score.isnot(None)
+        ).scalar() or 0
+        
+        return jsonify({
+            'total_courses': total_courses,
+            'current_students': int(current_semester_students),
+            'average_score': round(float(avg_score), 1) if avg_score else 0,
+            'graded_assignments': graded_count
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': f'获取统计信息失败: {str(e)}'}), 500
+
+@teacher_bp.route('/students', methods=['GET'])
+@jwt_required()
+@teacher_required
+def get_my_students():
+    """获取教师任课的所有学生"""
+    teacher_id = get_jwt_identity()
+    
+    try:
+        offering_id = request.args.get('offering_id', '')
+        
+        if offering_id:
+            # 查询特定课程的学生
+            students = db.session.query(
+                Student, Enrollment, CourseOffering, Course
+            ).join(Enrollment).join(CourseOffering).join(Course).filter(
+                CourseOffering.offering_id == offering_id,
+                CourseOffering.teacher_id == teacher_id
+            ).all()
+            
+            return jsonify({
+                'students': [{
+                    'student_id': student.student_id,
+                    'name': student.name,
+                    'gender': student.gender,
+                    'age': student.age,
+                    'class_id': student.class_id,
+                    'score': enrollment.score,
+                    'course_name': course.course_name,
+                    'offering_id': course_offering.offering_id
+                } for student, enrollment, course_offering, course in students]
+            }), 200
+        else:
+            # 查询教师所有课程的学生
+            students = db.session.query(
+                Student, Enrollment, CourseOffering, Course
+            ).join(Enrollment).join(CourseOffering).join(Course).filter(
+                CourseOffering.teacher_id == teacher_id
+            ).distinct(Student.student_id).all()
+            
+            return jsonify({
+                'students': [{
+                    'student_id': student.student_id,
+                    'name': student.name,
+                    'gender': student.gender,
+                    'age': student.age,
+                    'class_id': student.class_id,
+                    'total_credits': student.total_credits
+                } for student, enrollment, course_offering, course in students]
+            }), 200
+            
+    except Exception as e:
+        return jsonify({'message': f'获取学生列表失败: {str(e)}'}), 500

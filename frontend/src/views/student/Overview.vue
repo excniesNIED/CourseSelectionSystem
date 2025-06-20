@@ -179,15 +179,37 @@ const getGradeColor = (grade) => {
 
 const loadData = async () => {
   try {
-    const [statsResponse, coursesResponse, profileResponse] = await Promise.all([
-      api.get('/student/stats'),
-      api.get('/student/enrollments'),
-      api.get('/student/profile')
-    ])
+    // 加载学生统计信息
+    const statsResponse = await api.get('/student/statistics')
+    stats.value = {
+      enrolledCourses: statsResponse.total_enrollments || 0,
+      totalCredits: statsResponse.total_credits || 0,
+      avgGrade: statsResponse.avg_score || 0,
+      availableCourses: 0 // 这个需要单独加载
+    }
     
-    stats.value = statsResponse
-    enrolledCourses.value = coursesResponse
+    // 加载学生课程
+    const coursesResponse = await api.get('/student/courses')
+    enrolledCourses.value = Array.isArray(coursesResponse) ? coursesResponse.map(course => ({
+      ...course,
+      grade: course.score,
+      type: '必修' // 默认类型，可以后续扩展
+    })) : []
+    
+    // 加载学生个人信息
+    const profileResponse = await api.get('/student/profile')
     profile.value = profileResponse
+    
+    // 加载可选课程数量
+    try {
+      const availableResponse = await api.get('/student/courses/available', {
+        params: { academic_year: '2024', semester: 1 }
+      })
+      stats.value.availableCourses = Array.isArray(availableResponse) ? availableResponse.length : 0
+    } catch (error) {
+      console.warn('加载可选课程数量失败:', error)
+    }
+    
   } catch (error) {
     console.error('加载数据失败:', error)
   }

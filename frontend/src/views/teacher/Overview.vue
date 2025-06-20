@@ -266,17 +266,37 @@ const getGradeColor = (grade) => {
 
 const loadData = async () => {
   try {
-    // 加载统计数据
+    // 加载教师统计数据
     const statsResponse = await api.get('/teacher/stats')
-    stats.value = statsResponse
+    stats.value = {
+      totalCourses: statsResponse.total_courses || 0,
+      totalStudents: statsResponse.current_students || 0,
+      pendingGrades: 0, // 可以后续计算
+      avgGrade: statsResponse.average_score || 0
+    }
 
     // 加载课程列表
     const coursesResponse = await api.get('/teacher/courses')
-    courses.value = coursesResponse
+    courses.value = Array.isArray(coursesResponse) ? coursesResponse.map(course => ({
+      ...course,
+      type: '必修', // 默认类型，可以后续扩展
+      current_enrollment: course.current_students,
+      max_enrollment: course.max_students
+    })) : []
 
-    // 加载最近成绩
-    const gradesResponse = await api.get('/teacher/grades/recent')
-    recentGrades.value = gradesResponse
+    // 计算待评分数量
+    let pendingCount = 0
+    for (const course of courses.value) {
+      try {
+        const studentsResponse = await api.get(`/teacher/courses/${course.offering_id}/students`)
+        const students = studentsResponse.students || []
+        pendingCount += students.filter(s => s.score === null).length
+      } catch (error) {
+        console.warn('加载课程学生失败:', error)
+      }
+    }
+    stats.value.pendingGrades = pendingCount
+
   } catch (error) {
     console.error('加载数据失败:', error)
   }

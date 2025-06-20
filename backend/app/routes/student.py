@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app import db
 from app.models import Student, Course, CourseOffering, Enrollment, Teacher
 from sqlalchemy import and_, func, desc
@@ -9,10 +9,13 @@ student_bp = Blueprint('student', __name__)
 def student_required(f):
     """学生权限装饰器"""
     def decorated_function(*args, **kwargs):
-        current_user = get_jwt_identity()
-        if current_user['type'] != 'student':
-            return jsonify({'message': '权限不足，需要学生权限'}), 403
-        return f(*args, **kwargs)
+        try:
+            claims = get_jwt()
+            if claims.get('type') != 'student':
+                return jsonify({'message': '需要学生权限'}), 403
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': '身份验证失败'}), 401
     decorated_function.__name__ = f.__name__
     return decorated_function
 
@@ -21,8 +24,7 @@ def student_required(f):
 @student_required
 def get_profile():
     """查看个人信息"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         student = Student.query.filter_by(student_id=student_id).first()
@@ -47,8 +49,7 @@ def get_profile():
 @student_required
 def get_my_courses():
     """查看本人课程"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         academic_year = request.args.get('academic_year', '')
@@ -94,8 +95,7 @@ def get_my_courses():
 @student_required
 def get_available_courses():
     """获取可选课程列表"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         academic_year = request.args.get('academic_year', '2024')
@@ -160,8 +160,7 @@ def get_available_courses():
 @student_required
 def enroll_course(offering_id):
     """选课"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         # 检查开课是否存在
@@ -211,8 +210,7 @@ def enroll_course(offering_id):
 @student_required
 def drop_course(offering_id):
     """退选"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         # 查找选课记录
@@ -247,8 +245,7 @@ def drop_course(offering_id):
 @student_required
 def get_scores():
     """按学年查询考试成绩"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         academic_year = request.args.get('academic_year', '')
@@ -340,8 +337,7 @@ def get_scores():
 @student_required
 def get_student_statistics():
     """获取学生统计信息"""
-    current_user = get_jwt_identity()
-    student_id = current_user['id']
+    student_id = get_jwt_identity()
     
     try:
         student = Student.query.filter_by(student_id=student_id).first()

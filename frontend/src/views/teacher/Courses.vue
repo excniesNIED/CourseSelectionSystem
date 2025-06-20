@@ -217,9 +217,15 @@ const getGradeColor = (grade) => {
 const loadCourses = async () => {
   try {
     const response = await api.get('/teacher/courses')
-    courses.value = response
+    courses.value = Array.isArray(response) ? response.map(course => ({
+      ...course,
+      type: '必修', // 默认类型
+      current_enrollment: course.current_students,
+      max_enrollment: course.max_students
+    })) : []
   } catch (error) {
     console.error('加载课程列表失败:', error)
+    courses.value = []
   }
 }
 
@@ -229,17 +235,18 @@ const viewStudents = async (course) => {
   studentsLoading.value = true
 
   try {
-    const response = await api.get(`/teacher/courses/${course.course_id}/students`)
-    courseStudents.value = response
+    const response = await api.get(`/teacher/courses/${course.offering_id}/students`)
+    courseStudents.value = response.students || []
   } catch (error) {
     console.error('加载学生列表失败:', error)
+    courseStudents.value = []
   } finally {
     studentsLoading.value = false
   }
 }
 
 const manageGrades = (course) => {
-  router.push(`/teacher/grades?course=${course.course_id}`)
+  router.push('/teacher/grades')
 }
 
 onMounted(() => {
