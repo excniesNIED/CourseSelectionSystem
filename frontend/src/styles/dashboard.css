@@ -1,0 +1,85 @@
+/* 通用Dashboard样式 - 统一的导航动画和布局 */
+
+/* 导航抽屉基础样式 */
+.navigation-drawer {
+  height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.navigation-drawer :deep(.v-navigation-drawer__content) {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.navigation-drawer :deep(.v-list:first-of-type) {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+}
+
+.navigation-drawer :deep(.v-navigation-drawer__append) {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+/* 主导航项动画 */
+.main-nav-item {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.main-nav-item:hover {
+  background-color: rgba(21, 173, 102, 0.08) !important;
+  transform: translateX(4px) !important;
+}
+
+.main-nav-item:active {
+  transform: translateX(2px) scale(0.98) !important;
+}
+
+/* 底部导航项动画 */
+.nav-item {
+  transition: all 0.2s ease-in-out !important;
+  border-radius: 12px !important;
+}
+
+.nav-item:hover {
+  background-color: rgba(21, 173, 102, 0.08) !important;
+  transform: translateX(4px) !important;
+}
+
+.nav-item:active {
+  transform: translateX(2px) scale(0.98) !important;
+}
+
+/* 激活状态样式 */
+.v-list-item--active {
+  background: rgba(21, 173, 102, 0.12) !important;
+  color: #15AD66 !important;
+}
+
+/* 边框样式 */
+.border-e {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.border-b {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .navigation-drawer {
+    width: 260px !important;
+  }
+  
+  .main-nav-item:hover,
+  .nav-item:hover {
+    transform: none !important;
+    background-color: rgba(21, 173, 102, 0.12) !important;
+  }
+}

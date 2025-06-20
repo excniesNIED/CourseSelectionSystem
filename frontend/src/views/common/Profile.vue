@@ -1,8 +1,8 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col cols="12" md="8" lg="6" class="mx-auto">
-        <v-card>
+  <v-container fluid class="profile-container">
+    <v-row justify="center">
+      <v-col cols="12" md="8" lg="6">
+        <v-card class="profile-card">
           <v-card-title class="text-h5 pa-6">
             <v-icon class="mr-3">mdi-account-circle</v-icon>
             个人信息
@@ -119,10 +119,8 @@
               </v-row>
             </v-form>
           </v-card-text>
-        </v-card>
-
-        <!-- 修改密码卡片 -->
-        <v-card class="mt-6">
+        </v-card>        <!-- 修改密码卡片 -->
+        <v-card class="mt-6 password-card">
           <v-card-title class="text-h6 pa-6">
             <v-icon class="mr-3">mdi-lock-reset</v-icon>
             修改密码
@@ -164,14 +162,13 @@
                 variant="outlined"
                 :rules="confirmPasswordRules"
                 class="mb-4"
-              />
-
-              <v-btn
+              />              <v-btn
                 type="submit"
                 color="primary"
                 :loading="passwordLoading"
                 :disabled="!passwordValid"
                 block
+                class="change-password-btn"
               >
                 修改密码
               </v-btn>
@@ -313,3 +310,59 @@ onMounted(() => {
   loadProfile()
 })
 </script>
+
+<style scoped>
+.profile-container {
+  padding: 16px;
+  min-height: 100%;
+  overflow-y: auto;
+}
+
+.profile-card, .password-card {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* 确保在小屏幕设备上的良好显示 */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 8px;
+  }
+  
+  .v-card-title {
+    padding: 16px !important;
+    font-size: 1.2rem !important;
+  }
+  
+  .v-card-text {
+    padding: 16px !important;
+  }
+  
+  .v-col {
+    padding: 4px 8px !important;
+  }
+}
+
+/* 确保表单元素在窄屏时不会溢出 */
+.v-text-field {
+  width: 100%;
+}
+
+/* 为按钮添加适当的间距和动画 */
+.v-btn {
+  margin-top: 8px;
+}
+
+.change-password-btn {
+  transition: all 0.2s ease-in-out;
+}
+
+.change-password-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(21, 173, 102, 0.3);
+}
+
+.change-password-btn:active {
+  transform: translateY(0);
+}
+</style>

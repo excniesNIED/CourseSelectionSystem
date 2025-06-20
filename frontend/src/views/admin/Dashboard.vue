@@ -1,12 +1,11 @@
 <template>
-  <v-layout>
-    <!-- 侧边导航栏 -->
+  <v-layout>    <!-- 侧边导航栏 -->
     <v-navigation-drawer
       v-model="drawer"
       permanent
       width="280"
-      class="border-e"
-    >      <v-list-item
+      class="border-e navigation-drawer"
+    ><v-list-item
         :title="authStore.userName"
         subtitle="系统管理员"
         class="mb-2"
@@ -18,9 +17,7 @@
         </template>
       </v-list-item>
       
-      <v-divider />
-
-      <v-list nav>
+      <v-divider />      <v-list nav>
         <v-list-item
           v-for="item in menuItems"
           :key="item.value"
@@ -28,17 +25,21 @@
           :prepend-icon="item.icon"
           :title="item.title"
           rounded="xl"
-          class="ma-2"
+          class="ma-2 main-nav-item"
         />
-      </v-list>
-
-      <template #append>
+      </v-list><template #append>
         <v-list>
+          <v-list-item
+            prepend-icon="mdi-account-circle"
+            title="个人信息"
+            @click="$router.push('/admin/profile')"
+            class="ma-2 nav-item"
+          />
           <v-list-item
             prepend-icon="mdi-logout"
             title="退出登录"
             @click="logout"
-            class="ma-2"
+            class="ma-2 nav-item"
           />
         </v-list>
       </template>
@@ -99,12 +100,6 @@ const menuItems = [
     icon: 'mdi-account-group',
     value: 'classes',
     to: '/admin/classes'
-  },
-  {
-    title: '个人信息',
-    icon: 'mdi-account-circle',
-    value: 'profile',
-    to: '/admin/profile'
   }
 ]
 
@@ -122,6 +117,58 @@ const logout = () => {
 <style scoped>
 .v-navigation-drawer {
   background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.navigation-drawer {
+  height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.navigation-drawer :deep(.v-navigation-drawer__content) {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.navigation-drawer :deep(.v-list:first-of-type) {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+}
+
+.navigation-drawer :deep(.v-navigation-drawer__append) {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+.nav-item {
+  transition: all 0.2s ease-in-out !important;
+  border-radius: 12px !important;
+}
+
+.nav-item:hover {
+  background-color: rgba(21, 173, 102, 0.08) !important;
+  transform: translateX(4px) !important;
+}
+
+.nav-item:active {
+  transform: translateX(2px) scale(0.98) !important;
+}
+
+.main-nav-item {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.main-nav-item:hover {
+  background-color: rgba(21, 173, 102, 0.08) !important;
+  transform: translateX(4px) !important;
+}
+
+.main-nav-item:active {
+  transform: translateX(2px) scale(0.98) !important;
 }
 
 .v-list-item--active {
