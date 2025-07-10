@@ -9,48 +9,59 @@
           学号：{{ authStore.user?.student_id }} | 班级：{{ profile.class_name }}
         </p>
       </v-col>
-    </v-row>
-
-    <!-- 统计卡片 -->
+    </v-row>    <!-- 统计卡片 -->
     <v-row class="mb-6">
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="primary" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-book-open-variant</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.enrolledCourses }}</div>
-            <div class="text-subtitle-1">已选课程</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="stats.enrolledCourses"
+          label="已选课程"
+          icon="mdi-book-check"
+          icon-color="success"
+          card-color="success"
+          card-variant="tonal"
+          :loading="loading"
+        />
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="success" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-trophy</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.totalCredits }}</div>
-            <div class="text-subtitle-1">已修学分</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="stats.totalCredits"
+          label="总学分"
+          subtitle="已修学分"
+          icon="mdi-trophy"
+          icon-color="info"
+          card-color="info"
+          card-variant="tonal"
+          :precision="1"
+          :loading="loading"
+        />
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="info" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-chart-line</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.avgGrade.toFixed(1) }}</div>
-            <div class="text-subtitle-1">平均分</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="stats.avgGrade"
+          label="平均成绩"
+          subtitle="加权平均分"
+          icon="mdi-chart-line"
+          icon-color="warning"
+          card-color="warning"
+          card-variant="tonal"
+          :precision="1"
+          :loading="loading"
+        />
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="warning" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-bookmark-plus</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.availableCourses }}</div>
-            <div class="text-subtitle-1">可选课程</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="stats.availableCourses"
+          label="可选课程"
+          subtitle="本学期"
+          icon="mdi-bookmark-plus"
+          icon-color="primary"
+          card-color="primary"
+          card-variant="tonal"
+          :loading="loading"
+        />
       </v-col>
     </v-row>
 
@@ -146,8 +157,10 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/utils/api'
+import StatCard from '@/components/common/StatCard.vue'
 
 const authStore = useAuthStore()
+const loading = ref(true)
 
 const stats = ref({
   enrolledCourses: 0,
@@ -178,6 +191,7 @@ const getGradeColor = (grade) => {
 }
 
 const loadData = async () => {
+  loading.value = true
   try {
     // 加载学生统计信息
     const statsResponse = await api.get('/student/statistics')
@@ -212,6 +226,8 @@ const loadData = async () => {
     
   } catch (error) {
     console.error('加载数据失败:', error)
+  } finally {
+    loading.value = false
   }
 }
 

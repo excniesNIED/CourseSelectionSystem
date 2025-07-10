@@ -4,6 +4,7 @@ from app import db
 from app.models import Student, Course, CourseOffering, Enrollment, Teacher
 from app.services.student_service import StudentService
 from app.services.exceptions import ServiceError
+from app.services.statistics_service import CourseStatisticsService
 from sqlalchemy import and_, func, desc
 
 student_bp = Blueprint('student', __name__)
@@ -299,46 +300,10 @@ def get_student_statistics():
     student_id = get_jwt_identity()
     
     try:
-        student = Student.query.filter_by(student_id=student_id).first()
-        if not student:
-            return jsonify({'message': '学生不存在'}), 404
-        
-        # 统计选课数量
-        total_enrollments = Enrollment.query.filter_by(student_id=student_id).count()
-        
-        # 统计有成绩的课程数量
-        graded_courses = Enrollment.query.filter(
-            Enrollment.student_id == student_id,
-            Enrollment.score.isnot(None)
-        ).count()
-        
-        # 统计及格课程数量
-        passed_courses = Enrollment.query.filter(
-            Enrollment.student_id == student_id,
-            Enrollment.score >= 60
-        ).count()
-        
-        # 计算平均分
-        avg_score_result = db.session.query(
-            func.avg(Enrollment.score)
-        ).filter(
-            Enrollment.student_id == student_id,
-            Enrollment.score.isnot(None)
-        ).scalar()
-        
-        avg_score = round(avg_score_result, 2) if avg_score_result else 0
-        
-        return jsonify({
-            'total_credits': student.total_credits,
-            'total_enrollments': total_enrollments,
-            'graded_courses': graded_courses,
-            'passed_courses': passed_courses,
-            'failed_courses': graded_courses - passed_courses,
-            'avg_score': avg_score,
-            'pass_rate': round(passed_courses / graded_courses * 100, 2) if graded_courses > 0 else 0
-        }), 200
+        stats = CourseStatisticsService.get_student_course_statistics(student_id)
+        return jsonify(stats), 200
     except Exception as e:
-        return jsonify({'message': f'获取统计信息失败: {str(e)}'}), 500
+        return jsonify({'message': f'获取学生统计信息失败: {str(e)}'}), 500
 
 @student_bp.route('/schedule', methods=['GET'])
 @jwt_required()

@@ -57,22 +57,21 @@
             >
               <template #item.credits="{ item }">
                 {{ item.credits }} 学分
-              </template>
-
-              <template #item.enrollment_status="{ item }">
-                <v-chip 
-                  :color="item.available ? 'success' : 'error'"
-                  size="small"
-                >
-                  {{ item.current_students }}/{{ item.max_students }}
-                </v-chip>
+              </template>              <template #item.enrollment_status="{ item }">
+                <CourseStatus
+                  :current-students="item.current_students"
+                  :max-students="item.max_students"
+                  :available="item.available"
+                />
               </template>              <template #item.schedule="{ item }">
-                <div v-if="item.day_of_week && item.start_time && item.end_time">
-                  {{ formatSchedule(item) }}
-                </div>
-                <div v-else>
-                  <v-chip size="small" color="grey">未安排</v-chip>
-                </div>
+                <CourseSchedule
+                  :day-of-week="item.day_of_week"
+                  :start-time="item.start_time"
+                  :end-time="item.end_time"
+                  :location="item.location"
+                  :show-location="true"
+                  compact
+                />
               </template>
 
               <template #item.actions="{ item }">
@@ -111,6 +110,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/api'
+import CourseStatus from '@/components/common/CourseStatus.vue'
+import CourseSchedule from '@/components/common/CourseSchedule.vue'
 
 const loading = ref(false)
 const enrolling = ref(false)

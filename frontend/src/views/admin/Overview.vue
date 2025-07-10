@@ -1,26 +1,79 @@
-<template>
-  <div>
+<template>  <div>
     <!-- 统计卡片 -->
     <v-row class="mb-6">
-      <v-col
-        v-for="stat in statistics"
-        :key="stat.title"
-        cols="12"
-        sm="6"
-        md="4"
-        lg="2"
-      >
-        <v-card class="pa-4 text-center stat-card">
-          <v-icon :color="stat.color" size="48" class="mb-2">
-            {{ stat.icon }}
-          </v-icon>
-          <div class="text-h4 font-weight-bold mb-1">
-            {{ stat.value }}
-          </div>
-          <div class="text-body-2 text-medium-emphasis">
-            {{ stat.title }}
-          </div>
-        </v-card>
+      <v-col cols="12" sm="6" md="4" lg="2">
+        <StatCard
+          :value="statistics.basic_stats?.total_students || 0"
+          label="学生总数"
+          icon="mdi-account-group"
+          icon-color="primary"
+          card-color="primary"
+          card-variant="tonal"
+          :loading="loading"
+        />
+      </v-col>
+      
+      <v-col cols="12" sm="6" md="4" lg="2">
+        <StatCard
+          :value="statistics.basic_stats?.total_teachers || 0"
+          label="教师总数"
+          icon="mdi-account-tie"
+          icon-color="success"
+          card-color="success"
+          card-variant="tonal"
+          :loading="loading"
+        />
+      </v-col>
+      
+      <v-col cols="12" sm="6" md="4" lg="2">
+        <StatCard
+          :value="statistics.basic_stats?.total_courses || 0"
+          label="课程总数"
+          icon="mdi-book-open-variant"
+          icon-color="info"
+          card-color="info"
+          card-variant="tonal"
+          :loading="loading"
+        />
+      </v-col>
+      
+      <v-col cols="12" sm="6" md="4" lg="2">
+        <StatCard
+          :value="statistics.course_stats?.total_offerings || 0"
+          label="开课数量"
+          icon="mdi-school"
+          icon-color="warning"
+          card-color="warning"
+          card-variant="tonal"
+          :loading="loading"
+        />
+      </v-col>
+      
+      <v-col cols="12" sm="6" md="4" lg="2">
+        <StatCard
+          :value="statistics.course_stats?.total_enrolled || 0"
+          label="选课人次"
+          icon="mdi-bookmark-check"
+          icon-color="secondary"
+          card-color="secondary"
+          card-variant="tonal"
+          :loading="loading"
+        />
+      </v-col>
+      
+      <v-col cols="12" sm="6" md="4" lg="2">
+        <StatCard
+          :value="statistics.course_stats?.avg_enrollment_rate || 0"
+          label="选课率"
+          subtitle="平均选课率"
+          icon="mdi-chart-pie"
+          icon-color="error"
+          card-color="error"
+          card-variant="tonal"
+          value-type="percentage"
+          :precision="1"
+          :loading="loading"
+        />
       </v-col>
     </v-row>
 
@@ -127,15 +180,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/utils/api'
+import StatCard from '@/components/common/StatCard.vue'
 
-const statistics = ref([
-  { title: '教师总数', value: 0, icon: 'mdi-account-tie', color: 'primary' },
-  { title: '学生总数', value: 0, icon: 'mdi-account-school', color: 'secondary' },
-  { title: '课程总数', value: 0, icon: 'mdi-book-open-variant', color: 'tertiary' },
-  { title: '班级总数', value: 0, icon: 'mdi-account-group', color: 'success' },
-  { title: '开课数量', value: 0, icon: 'mdi-calendar-check', color: 'warning' },
-  { title: '选课记录', value: 0, icon: 'mdi-clipboard-list', color: 'info' }
-])
+const statistics = ref({})
+const loading = ref(true)
 
 const quickActions = [
   {
@@ -201,16 +249,13 @@ const systemInfo = ref([
 
 const loadStatistics = async () => {
   try {
-    const response = await api.get('/admin/statistics')
-    
-    statistics.value[0].value = response.teacher_count
-    statistics.value[1].value = response.student_count
-    statistics.value[2].value = response.course_count
-    statistics.value[3].value = response.class_count
-    statistics.value[4].value = response.offering_count
-    statistics.value[5].value = response.enrollment_count
+    loading.value = true
+    const response = await api.get('/admin/statistics/overview')
+    statistics.value = response.data
   } catch (error) {
     console.error('加载统计信息失败:', error)
+  } finally {
+    loading.value = false
   }
 }
 

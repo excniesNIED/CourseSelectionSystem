@@ -26,22 +26,26 @@
                   clearable
                 />
               </v-col>
-            </v-row>
-
-            <!-- 数据表格 -->
-            <v-data-table
+            </v-row>            <!-- 数据表格 -->
+            <CrudDataTable
+              title=""
               :headers="headers"
               :items="filteredClasses"
               :loading="loading"
               item-value="class_id"
-              class="elevation-1"
+              enable-add
+              @add-item="openAddDialog"
+              @edit-item="editClass"
+              @delete-item="deleteClass"
             >
-              <template #item.student_count="{ item }">
+              <!-- 自定义学生人数列显示 -->
+              <template #item.student_count="{ value }">
                 <v-chip color="primary" size="small">
-                  {{ item.student_count || 0 }} 人
+                  {{ value || 0 }} 人
                 </v-chip>
               </template>
               
+              <!-- 自定义操作列显示 -->
               <template #item.actions="{ item }">
                 <v-btn
                   icon="mdi-eye"
@@ -49,23 +53,10 @@
                   color="info"
                   variant="text"
                   @click="viewStudents(item)"
-                />
-                <v-btn
-                  icon="mdi-pencil"
-                  size="small"
-                  color="primary"
-                  variant="text"
-                  @click="editClass(item)"
-                />
-                <v-btn
-                  icon="mdi-delete"
-                  size="small"
-                  color="error"
-                  variant="text"
-                  @click="deleteClass(item)"
+                  title="查看学生"
                 />
               </template>
-            </v-data-table>
+            </CrudDataTable>
           </v-card-text>
         </v-card>
       </v-col>
@@ -199,6 +190,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/api'
+import CrudDataTable from '@/components/common/CrudDataTable.vue'
 
 const loading = ref(false)
 const saving = ref(false)

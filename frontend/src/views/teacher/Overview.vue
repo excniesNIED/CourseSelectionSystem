@@ -9,48 +9,56 @@
           今天是 {{ new Date().toLocaleDateString('zh-CN') }}
         </p>
       </v-col>
-    </v-row>
-
-    <!-- 统计卡片 -->
+    </v-row>    <!-- 统计卡片 -->
     <v-row class="mb-6">
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="primary" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-book-open-variant</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.totalCourses }}</div>
-            <div class="text-subtitle-1">授课门数</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="statistics.basic_stats?.total_courses || 0"
+          label="授课门数"
+          icon="mdi-book-open-variant"
+          icon-color="primary"
+          card-color="primary"
+          card-variant="tonal"
+          :loading="loading"
+        />
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="success" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-account-group</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.totalStudents }}</div>
-            <div class="text-subtitle-1">学生总数</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="statistics.basic_stats?.total_students || 0"
+          label="学生总数"
+          icon="mdi-account-group"
+          icon-color="success"
+          card-color="success"
+          card-variant="tonal"
+          :loading="loading"
+        />
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="warning" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-clipboard-text</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.pendingGrades }}</div>
-            <div class="text-subtitle-1">待评分</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="statistics.basic_stats?.pending_grades || 0"
+          label="待评分"
+          icon="mdi-clipboard-text"
+          icon-color="warning"
+          card-color="warning"
+          card-variant="tonal"
+          :loading="loading"
+        />
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card class="h-100" color="info" theme="dark">
-          <v-card-text class="text-center">
-            <v-icon size="48" class="mb-3">mdi-chart-line</v-icon>
-            <div class="text-h4 font-weight-bold">{{ stats.avgGrade.toFixed(1) }}</div>
-            <div class="text-subtitle-1">平均分</div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :value="statistics.basic_stats?.average_score || 0"
+          label="平均分"
+          icon="mdi-chart-line"
+          icon-color="info"
+          card-color="info"
+          card-variant="tonal"
+          value-type="number"
+          :precision="1"
+          :loading="loading"
+        />
       </v-col>
     </v-row>
 
@@ -233,16 +241,12 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/utils/api'
+import StatCard from '@/components/common/StatCard.vue'
 
 const authStore = useAuthStore()
 
-const stats = ref({
-  totalCourses: 0,
-  totalStudents: 0,
-  pendingGrades: 0,
-  avgGrade: 0
-})
-
+const statistics = ref({})
+const loading = ref(true)
 const courses = ref([])
 const recentGrades = ref([])
 
@@ -266,14 +270,11 @@ const getGradeColor = (grade) => {
 
 const loadData = async () => {
   try {
+    loading.value = true
+    
     // 加载教师统计数据
-    const statsResponse = await api.get('/teacher/stats')
-    stats.value = {
-      totalCourses: statsResponse.total_courses || 0,
-      totalStudents: statsResponse.current_students || 0,
-      pendingGrades: 0, // 可以后续计算
-      avgGrade: statsResponse.average_score || 0
-    }
+    const statsResponse = await api.get('/teacher/statistics')
+    statistics.value = statsResponse.data
 
     // 加载课程列表
     const coursesResponse = await api.get('/teacher/courses')
@@ -284,21 +285,10 @@ const loadData = async () => {
       max_enrollment: course.max_students
     })) : []
 
-    // 计算待评分数量
-    let pendingCount = 0
-    for (const course of courses.value) {
-      try {
-        const studentsResponse = await api.get(`/teacher/courses/${course.offering_id}/students`)
-        const students = studentsResponse.students || []
-        pendingCount += students.filter(s => s.score === null).length
-      } catch (error) {
-        console.warn('加载课程学生失败:', error)
-      }
-    }
-    stats.value.pendingGrades = pendingCount
-
   } catch (error) {
     console.error('加载数据失败:', error)
+  } finally {
+    loading.value = false
   }
 }
 

@@ -46,33 +46,18 @@
                   clearable
                 />
               </v-col>
-            </v-row>
-
-            <!-- 数据表格 -->
-            <v-data-table
+            </v-row>            <!-- 数据表格 -->
+            <CrudDataTable
+              title=""
               :headers="headers"
               :items="filteredTeachers"
               :loading="loading"
               item-value="teacher_id"
-              class="elevation-1"
-            >
-              <template #item.actions="{ item }">
-                <v-btn
-                  icon="mdi-pencil"
-                  size="small"
-                  color="primary"
-                  variant="text"
-                  @click="editTeacher(item)"
-                />
-                <v-btn
-                  icon="mdi-delete"
-                  size="small"
-                  color="error"
-                  variant="text"
-                  @click="deleteTeacher(item)"
-                />
-              </template>
-            </v-data-table>
+              enable-add
+              @add-item="openAddDialog"
+              @edit-item="editTeacher"
+              @delete-item="deleteTeacher"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -217,6 +202,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/api'
+import CrudDataTable from '@/components/common/CrudDataTable.vue'
 
 const loading = ref(false)
 const saving = ref(false)

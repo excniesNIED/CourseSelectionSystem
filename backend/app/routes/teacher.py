@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app import db
 from app.models import Teacher, Course, CourseOffering, Enrollment, Student, Class
 from sqlalchemy import func, desc, and_
+from app.services.statistics_service import CourseStatisticsService
 
 teacher_bp = Blueprint('teacher', __name__)
 
@@ -548,3 +549,22 @@ def get_my_students():
             
     except Exception as e:
         return jsonify({'message': f'获取学生列表失败: {str(e)}'}), 500
+
+@teacher_bp.route('/statistics', methods=['GET'])
+@jwt_required()
+@teacher_required
+def get_teacher_statistics():
+    """获取教师统计信息"""
+    teacher_id = get_jwt_identity()
+    
+    try:
+        academic_year = request.args.get('academic_year')
+        semester = request.args.get('semester', type=int)
+        
+        stats = CourseStatisticsService.get_teacher_course_statistics(
+            teacher_id, academic_year, semester
+        )
+        
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({'message': f'获取教师统计信息失败: {str(e)}'}), 500

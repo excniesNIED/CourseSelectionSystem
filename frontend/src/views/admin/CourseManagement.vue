@@ -46,26 +46,31 @@
                   clearable
                 />
               </v-col>
-            </v-row>
-
-            <!-- 数据表格 -->
-            <v-data-table
+            </v-row>            <!-- 数据表格 -->
+            <CrudDataTable
+              title=""
               :headers="headers"
               :items="filteredCourses"
               :loading="loading"
               item-value="course_id"
-              class="elevation-1"
+              enable-add
+              @add-item="openAddDialog"
+              @edit-item="editCourse"
+              @delete-item="deleteCourse"
             >
-              <template #item.credits="{ item }">
-                {{ item.credits }} 学分
+              <!-- 自定义学分列显示 -->
+              <template #item.credits="{ value }">
+                {{ value }} 学分
               </template>
 
-              <template #item.type="{ item }">
-                <v-chip :color="getTypeColor(item.type)" size="small">
-                  {{ item.type }}
+              <!-- 自定义课程类型显示 -->
+              <template #item.type="{ value }">
+                <v-chip :color="getTypeColor(value)" size="small">
+                  {{ value }}
                 </v-chip>
               </template>
 
+              <!-- 自定义选课情况显示 -->
               <template #item.enrollment_status="{ item }">
                 <v-chip 
                   :color="item.current_enrollment >= item.max_enrollment ? 'error' : 'success'"
@@ -74,24 +79,7 @@
                   {{ item.current_enrollment }}/{{ item.max_enrollment }}
                 </v-chip>
               </template>
-              
-              <template #item.actions="{ item }">
-                <v-btn
-                  icon="mdi-pencil"
-                  size="small"
-                  color="primary"
-                  variant="text"
-                  @click="editCourse(item)"
-                />
-                <v-btn
-                  icon="mdi-delete"
-                  size="small"
-                  color="error"
-                  variant="text"
-                  @click="deleteCourse(item)"
-                />
-              </template>
-            </v-data-table>
+            </CrudDataTable>
           </v-card-text>
         </v-card>
       </v-col>
@@ -236,6 +224,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/api'
+import CrudDataTable from '@/components/common/CrudDataTable.vue'
 
 const loading = ref(false)
 const saving = ref(false)

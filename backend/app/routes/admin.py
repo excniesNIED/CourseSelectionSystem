@@ -4,8 +4,9 @@ from functools import wraps
 from app import db
 from app.models import Admin, Student, Teacher, Course, Class, CourseOffering, Enrollment
 from sqlalchemy import func, desc
+from app.services.statistics_service import CourseStatisticsService
 
-admin_bp = Blueprint('admin', __name__)
+admin_bp = Blueprint('admin', 'admin')
 
 def admin_required(f):
     """管理员权限装饰器"""
@@ -588,6 +589,73 @@ def get_statistics():
         }), 200
     except Exception as e:
         return jsonify({'message': f'获取统计信息失败: {str(e)}'}), 500
+
+# 统计分析
+@admin_bp.route('/statistics/overview', methods=['GET'])
+@admin_required
+def get_system_statistics():
+    """获取系统总体统计信息"""
+    try:
+        academic_year = request.args.get('academic_year', '2024')
+        semester = request.args.get('semester', type=int)
+        
+        # 获取课程选课统计
+        course_stats = CourseStatisticsService.get_course_enrollment_statistics(
+            academic_year, semester
+        )
+        
+        # 获取热门课程
+        popular_courses = CourseStatisticsService.get_popular_courses(
+            academic_year, semester, limit=5
+        )
+        
+        # 获取时间冲突分析
+        conflict_analysis = CourseStatisticsService.get_time_conflict_analysis(
+            academic_year, semester
+        )
+        
+        # 基本统计
+        total_students = Student.query.count()
+        total_teachers = Teacher.query.count()
+        total_courses = Course.query.count()
+        total_classes = Class.query.count()
+        
+        return jsonify({
+            'basic_stats': {
+                'total_students': total_students,
+                'total_teachers': total_teachers,
+                'total_courses': total_courses,
+                'total_classes': total_classes
+            },
+            'course_stats': course_stats,
+            'popular_courses': popular_courses,
+            'conflict_analysis': conflict_analysis
+        }), 200
+    except Exception as e:
+        return jsonify({'message': f'获取统计信息失败: {str(e)}'}), 500
+
+@admin_bp.route('/statistics/courses', methods=['GET'])
+@admin_required
+def get_course_statistics():
+    """获取课程详细统计信息"""
+    try:
+        academic_year = request.args.get('academic_year', '2024')
+        semester = request.args.get('semester', type=int)
+        
+        course_stats = CourseStatisticsService.get_course_enrollment_statistics(
+            academic_year, semester
+        )
+        
+        popular_courses = CourseStatisticsService.get_popular_courses(
+            academic_year, semester
+        )
+        
+        return jsonify({
+            'statistics': course_stats,
+            'popular_courses': popular_courses
+        }), 200
+    except Exception as e:
+        return jsonify({'message': f'获取课程统计失败: {str(e)}'}), 500
 
 # 数据库初始化
 @admin_bp.route('/init-data', methods=['POST'])
