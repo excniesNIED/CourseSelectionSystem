@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flasgger import Swagger
 from dotenv import load_dotenv
 import os
 
@@ -11,6 +12,7 @@ load_dotenv()
 # 初始化扩展
 db = SQLAlchemy()
 jwt = JWTManager()
+swagger = Swagger()
 
 def create_app():
     app = Flask(__name__)
@@ -30,11 +32,33 @@ def create_app():
     #     f"?charset=utf8mb4&auth_plugin=mysql_native_password&connect_timeout=10"
     # )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # 初始化扩展
+      # 初始化扩展
     db.init_app(app)
     jwt.init_app(app)
     CORS(app)
+      # 配置Swagger
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "选课系统 API",
+            "description": "基于Flask的选课管理系统API文档",
+            "version": "1.0.0"
+        },
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Token格式: Bearer <token>"
+            }
+        },
+        "security": [
+            {
+                "Bearer": []
+            }
+        ]
+    }
+    swagger = Swagger(app, template=swagger_template)
     
     # 注册蓝图
     from .routes.auth import auth_bp

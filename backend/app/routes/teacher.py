@@ -81,14 +81,94 @@ def get_my_courses():
 @jwt_required()
 @teacher_required
 def create_course_offering():
-    """开设课程"""
+    """
+    开设课程
+    ---
+    tags:
+      - 教师管理
+    summary: 教师开设课程
+    description: 教师创建新的课程开设记录，包含时间地点等详细信息
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - course_id
+            - academic_year
+            - semester
+            - max_students
+          properties:
+            course_id:
+              type: string
+              description: 课程编号
+              example: "CS101"
+            academic_year:
+              type: string
+              description: 学年
+              example: "2024"
+            semester:
+              type: integer
+              description: 学期 (0: 第一学期, 1: 第二学期)
+              example: 1
+            max_students:
+              type: integer
+              description: 最大选课人数
+              example: 50
+            day_of_week:
+              type: integer
+              description: 星期几 (1-7, 1表示周一)
+              example: 1
+            start_time:
+              type: string
+              format: time
+              description: 开始时间 (HH:MM格式)
+              example: "08:00"
+            end_time:
+              type: string
+              format: time
+              description: 结束时间 (HH:MM格式)
+              example: "09:50"
+            location:
+              type: string
+              description: 上课地点
+              example: "教学楼A101"
+    responses:
+      201:
+        description: 课程开设成功
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "课程开设成功"
+            offering_id:
+              type: string
+              description: 开课编号
+              example: "2024-1-CS101-T001"
+      400:
+        description: 请求参数错误或课程已存在
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "该学期已开设此课程"
+      403:
+        description: 权限不足
+      500:
+        description: 服务器内部错误
+    """
     teacher_id = get_jwt_identity()
     
     data = request.get_json()
     required_fields = ['course_id', 'academic_year', 'semester', 'max_students']
     
     if not all(field in data for field in required_fields):
-        return jsonify({'message': '所有字段都是必填的'}), 400
+        return jsonify({'message': '所有必填字段都是必需的'}), 400
     
     try:
         # 检查课程是否存在
@@ -103,19 +183,44 @@ def create_course_offering():
         if CourseOffering.query.filter_by(offering_id=offering_id).first():
             return jsonify({'message': '该学期已开设此课程'}), 400
         
+        # 处理时间字段
+        start_time = None
+        end_time = None
+        if data.get('start_time'):
+            try:
+                from datetime import datetime
+                start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+            except ValueError:
+                return jsonify({'message': '开始时间格式错误，请使用HH:MM格式'}), 400
+        
+        if data.get('end_time'):
+            try:
+                from datetime import datetime
+                end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+            except ValueError:
+                return jsonify({'message': '结束时间格式错误，请使用HH:MM格式'}), 400
+        
         offering = CourseOffering(
             offering_id=offering_id,
             course_id=data['course_id'],
             teacher_id=teacher_id,
             academic_year=data['academic_year'],
             semester=bool(data['semester']),
-            max_students=data['max_students']
+            max_students=data['max_students'],
+            day_of_week=data.get('day_of_week'),
+            start_time=start_time,
+            end_time=end_time,
+            location=data.get('location'),
+            status=data.get('status', '开放选课')
         )
         
         db.session.add(offering)
         db.session.commit()
         
-        return jsonify({'message': '课程开设成功'}), 201
+        return jsonify({
+            'message': '课程开设成功',
+            'offering_id': offering_id
+        }), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'开设课程失败: {str(e)}'}), 500

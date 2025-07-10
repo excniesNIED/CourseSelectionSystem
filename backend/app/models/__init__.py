@@ -1,6 +1,12 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, time
 import bcrypt
+
+# 定义课程先修关系的关联表
+course_prerequisites = db.Table('course_prerequisites',
+    db.Column('course_id', db.String(5), db.ForeignKey('courses.course_id'), primary_key=True),
+    db.Column('prerequisite_id', db.String(5), db.ForeignKey('courses.course_id'), primary_key=True)
+)
 
 class Admin(db.Model):
     __tablename__ = 'admins'
@@ -69,6 +75,16 @@ class Course(db.Model):
     
     # 关系
     offerings = db.relationship('CourseOffering', backref='course', lazy=True, cascade='all, delete-orphan')
+    
+    # 先修课程关系：此课程需要的先修课程
+    prerequisites = db.relationship(
+        'Course',
+        secondary=course_prerequisites,
+        primaryjoin=course_id == course_prerequisites.c.course_id,
+        secondaryjoin=course_id == course_prerequisites.c.prerequisite_id,
+        backref=db.backref('required_for', lazy='dynamic'),  # 反向关系：此课程是哪些课程的先修课
+        lazy='dynamic'
+    )
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
@@ -104,6 +120,12 @@ class CourseOffering(db.Model):
     semester = db.Column(db.Boolean, nullable=False)  # True: 第一学期, False: 第二学期
     max_students = db.Column(db.Integer, default=50)
     current_students = db.Column(db.Integer, default=0)
+    # 新增字段：课程时间和地点
+    day_of_week = db.Column(db.Integer, nullable=True)  # 1-7 代表周一到周日
+    start_time = db.Column(db.Time, nullable=True)  # 开始时间
+    end_time = db.Column(db.Time, nullable=True)  # 结束时间
+    location = db.Column(db.String(50), nullable=True)  # 上课地点
+    status = db.Column(db.String(20), default='开放选课', nullable=False)  # 课程状态
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

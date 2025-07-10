@@ -50,7 +50,88 @@ def student_required(f):
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """统一登录接口"""
+    """
+    用户登录接口
+    ---
+    tags:
+      - 用户认证
+    summary: 用户登录
+    description: 支持管理员、教师、学生三种用户类型的统一登录接口
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - password
+            - user_type
+          properties:
+            username:
+              type: string
+              description: 用户名（管理员用户名/教师工号/学号）
+              example: "admin"
+            password:
+              type: string
+              description: 登录密码
+              example: "123456"
+            user_type:
+              type: string
+              enum: [admin, teacher, student]
+              description: 用户类型
+              example: "admin"
+    responses:
+      200:
+        description: 登录成功
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "登录成功"
+            access_token:
+              type: string
+              description: JWT访问令牌
+              example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+            user:
+              type: object
+              description: 用户信息
+              properties:
+                id:
+                  type: string
+                  description: 用户ID
+                name:
+                  type: string
+                  description: 用户姓名
+                type:
+                  type: string
+                  description: 用户类型
+      400:
+        description: 请求参数错误
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "用户名、密码和用户类型不能为空"
+      401:
+        description: 用户名或密码错误
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "用户名或密码错误"
+      500:
+        description: 服务器内部错误
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "登录失败: 详细错误信息"
+    """
     data = request.get_json()
     
     if not data or not data.get('username') or not data.get('password') or not data.get('user_type'):

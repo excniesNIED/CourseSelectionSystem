@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app import db
 from app.models import Student, Course, CourseOffering, Enrollment, Teacher
+from app.services.student_service import StudentService
+from app.services.exceptions import ServiceError
 from sqlalchemy import and_, func, desc
 
 student_bp = Blueprint('student', __name__)
@@ -164,44 +166,10 @@ def enroll_course(offering_id):
     student_id = get_jwt_identity()
     
     try:
-        # 检查开课是否存在
-        offering = CourseOffering.query.filter_by(offering_id=offering_id).first()
-        if not offering:
-            return jsonify({'message': '开课不存在'}), 404
-        
-        # 检查是否已经选过这门课
-        existing_enrollment = Enrollment.query.filter_by(
-            offering_id=offering_id,
-            student_id=student_id
-        ).first()
-        if existing_enrollment:
-            return jsonify({'message': '已经选过这门课'}), 400
-        
-        # 检查是否选过同一门课程的其他班级
-        same_course_enrollment = db.session.query(Enrollment).join(CourseOffering).filter(
-            CourseOffering.course_id == offering.course_id,
-            Enrollment.student_id == student_id
-        ).first()
-        if same_course_enrollment:
-            return jsonify({'message': '已经选过此课程的其他班级'}), 400
-        
-        # 检查是否还有名额
-        if offering.current_students >= offering.max_students:
-            return jsonify({'message': '课程人数已满'}), 400
-        
-        # 创建选课记录
-        enrollment = Enrollment(
-            offering_id=offering_id,
-            student_id=student_id
-        )
-        
-        # 更新当前选课人数
-        offering.current_students += 1
-        
-        db.session.add(enrollment)
-        db.session.commit()
-        
-        return jsonify({'message': '选课成功'}), 201
+        result = StudentService.enroll_in_course(student_id, offering_id)
+        return jsonify(result), 201
+    except ServiceError as e:
+        return jsonify({'message': e.message}), e.code
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'选课失败: {str(e)}'}), 500
@@ -214,29 +182,10 @@ def drop_course(offering_id):
     student_id = get_jwt_identity()
     
     try:
-        # 查找选课记录
-        enrollment = Enrollment.query.filter_by(
-            offering_id=offering_id,
-            student_id=student_id
-        ).first()
-        
-        if not enrollment:
-            return jsonify({'message': '未选择此课程'}), 404
-        
-        # 检查是否已有成绩
-        if enrollment.score is not None:
-            return jsonify({'message': '已有成绩，无法退选'}), 400
-        
-        # 获取开课信息
-        offering = CourseOffering.query.filter_by(offering_id=offering_id).first()
-        if offering:
-            offering.current_students = max(0, offering.current_students - 1)
-        
-        # 删除选课记录
-        db.session.delete(enrollment)
-        db.session.commit()
-        
-        return jsonify({'message': '退选成功'}), 200
+        result = StudentService.drop_course(student_id, offering_id)
+        return jsonify(result), 200
+    except ServiceError as e:
+        return jsonify({'message': e.message}), e.code
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'退选失败: {str(e)}'}), 500
@@ -390,3 +339,18 @@ def get_student_statistics():
         }), 200
     except Exception as e:
         return jsonify({'message': f'获取统计信息失败: {str(e)}'}), 500
+
+@student_bp.route('/schedule', methods=['GET'])
+@jwt_required()
+@student_required
+def get_schedule():
+    """获取学生课表"""
+    student_id = get_jwt_identity()
+    
+    try:
+        schedule = StudentService.get_student_schedule(student_id)
+        return jsonify(schedule), 200
+    except ServiceError as e:
+        return jsonify({'message': e.message}), e.code
+    except Exception as e:
+        return jsonify({'message': f'获取课表失败: {str(e)}'}), 500
