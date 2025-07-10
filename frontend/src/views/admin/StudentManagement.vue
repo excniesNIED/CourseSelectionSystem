@@ -2,31 +2,11 @@
   <v-container>
     <v-row>
       <v-col cols="12">
-        <v-card>
-          <v-card-title class="d-flex justify-space-between align-center pa-6">
-            <div class="d-flex align-center">
-              <v-icon class="mr-3">mdi-account-group</v-icon>
-              <span class="text-h5">学生管理</span>
-            </div>
-            <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-              添加学生
-            </v-btn>
-          </v-card-title>
-
+        <!-- 筛选器 -->
+        <v-card class="mb-4">
           <v-card-text>
-            <!-- 搜索和筛选 -->
-            <v-row class="mb-4">
+            <v-row>
               <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="search"
-                  label="搜索学生"
-                  prepend-inner-icon="mdi-magnify"
-                  variant="outlined"
-                  density="compact"
-                  clearable
-                />
-              </v-col>
-              <v-col cols="12" md="3">
                 <v-select
                   v-model="classFilter"
                   :items="classOptions"
@@ -36,7 +16,7 @@
                   clearable
                 />
               </v-col>
-              <v-col cols="12" md="3">
+              <v-col cols="12" md="4">
                 <v-select
                   v-model="genderFilter"
                   :items="genderOptions"
@@ -47,38 +27,24 @@
                 />
               </v-col>
             </v-row>
-
-            <!-- 数据表格 -->
-            <v-data-table
-              :headers="headers"
-              :items="filteredStudents"
-              :loading="loading"
-              item-value="student_id"
-              class="elevation-1"
-            >
-              <template #item.total_credits="{ item }">
-                {{ item.total_credits || 0 }} 学分
-              </template>
-              
-              <template #item.actions="{ item }">
-                <v-btn
-                  icon="mdi-pencil"
-                  size="small"
-                  color="primary"
-                  variant="text"
-                  @click="editStudent(item)"
-                />
-                <v-btn
-                  icon="mdi-delete"
-                  size="small"
-                  color="error"
-                  variant="text"
-                  @click="deleteStudent(item)"
-                />
-              </template>
-            </v-data-table>
           </v-card-text>
         </v-card>
+
+        <!-- 使用可复用的CRUD表格组件 -->
+        <CrudDataTable
+          title="学生管理"
+          :headers="headers"
+          :items="filteredStudents"
+          :loading="loading"
+          @add-item="openAddDialog"
+          @edit-item="editStudent"
+          @delete-item="deleteStudent"
+        >
+          <!-- 自定义学分列显示 -->
+          <template #item.total_credits="{ value }">
+            {{ value || 0 }} 学分
+          </template>
+        </CrudDataTable>
       </v-col>
     </v-row>
 
@@ -231,13 +197,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/api'
+import CrudDataTable from '@/components/common/CrudDataTable.vue'
 
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const students = ref([])
 const classes = ref([])
-const search = ref('')
 const classFilter = ref('')
 const genderFilter = ref('')
 
@@ -282,8 +248,7 @@ const headers = [
   { title: '年龄', key: 'age', sortable: true },
   { title: '生源所在地', key: 'hometown', sortable: true },
   { title: '班级', key: 'class_name', sortable: true },
-  { title: '已修学分', key: 'total_credits', sortable: true },
-  { title: '操作', key: 'actions', sortable: false, width: 120 }
+  { title: '已修学分', key: 'total_credits', sortable: true }
 ]
 
 const genderOptions = [
@@ -300,14 +265,6 @@ const classOptions = computed(() =>
 
 const filteredStudents = computed(() => {
   let filtered = Array.isArray(students.value) ? students.value : []
-
-  if (search.value) {
-    filtered = filtered.filter(student =>
-      student.name.includes(search.value) ||
-      student.student_id.includes(search.value) ||
-      student.hometown.includes(search.value)
-    )
-  }
 
   if (classFilter.value) {
     filtered = filtered.filter(student => student.class_id === classFilter.value)

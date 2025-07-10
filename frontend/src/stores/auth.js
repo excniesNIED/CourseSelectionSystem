@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/utils/api'
+import { useUserStore } from './user'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -13,7 +14,6 @@ export const useAuthStore = defineStore('auth', {
     userName: (state) => state.user?.name || '',
     userId: (state) => state.user?.id || ''
   },
-
   actions: {
     async login(credentials) {
       try {
@@ -27,9 +27,13 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('token', this.token)
         localStorage.setItem('user', JSON.stringify(this.user))
         
+        // 设置用户角色并获取详细信息
+        const userStore = useUserStore()
+        userStore.setUserRole(this.user.type)
+        await userStore.fetchUserProfile()
+        
         return response
       } catch (error) {
-        // this.logout() // 注销这行，防止在登录失败时清除状态导致页面刷新
         // 抛出后端返回的实际错误信息
         throw error.response?.data || error
       }
@@ -56,19 +60,21 @@ export const useAuthStore = defineStore('auth', {
         this.logout()
         return false
       }
-    },
-
-    logout() {
+    },    logout() {
       this.user = null
       this.token = null
       this.isAuthenticated = false
+      
+      // 清空用户store
+      const userStore = useUserStore()
+      userStore.clearUser()
       
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     },
 
     // 初始化认证状态（从localStorage恢复）
-    initAuth() {
+    async initAuth() {
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
       
@@ -76,6 +82,11 @@ export const useAuthStore = defineStore('auth', {
         this.token = token
         this.user = JSON.parse(user)
         this.isAuthenticated = true
+        
+        // 初始化用户store
+        const userStore = useUserStore()
+        userStore.setUserRole(this.user.type)
+        await userStore.fetchUserProfile()
       }
     }
   }

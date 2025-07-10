@@ -29,9 +29,7 @@
                     readonly
                   />
                 </v-col>
-              </v-row>
-
-              <v-row v-if="authStore.userType !== 'admin'">
+              </v-row>              <v-row v-if="userStore.role !== 'admin'">
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="profile.gender"
@@ -53,7 +51,7 @@
               </v-row>
 
               <!-- 教师特有字段 -->
-              <v-row v-if="authStore.userType === 'teacher'">
+              <v-row v-if="userStore.role === 'teacher'">
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="profile.title"
@@ -72,10 +70,8 @@
                     readonly
                   />
                 </v-col>
-              </v-row>
-
-              <!-- 学生特有字段 -->
-              <v-row v-if="authStore.userType === 'student'">
+              </v-row>              <!-- 学生特有字段 -->
+              <v-row v-if="userStore.role === 'student'">
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="profile.hometown"
@@ -97,7 +93,7 @@
                 </v-col>
               </v-row>
 
-              <v-row v-if="authStore.userType === 'student'">
+              <v-row v-if="userStore.role === 'student'">
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="profile.class_id"
@@ -192,11 +188,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import api from '@/utils/api'
+import { useUserStore } from '@/stores/user'
 
 const authStore = useAuthStore()
+const userStore = useUserStore()
 
 const profileForm = ref(null)
 const passwordFormRef = ref(null)
@@ -211,18 +208,8 @@ const showConfirmPassword = ref(false)
 const passwordMessage = ref('')
 const passwordMessageType = ref('success')
 
-const profile = reactive({
-  id: '',
-  name: '',
-  gender: '',
-  age: '',
-  title: '',
-  phone: '',
-  hometown: '',
-  total_credits: '',
-  class_id: '',
-  class_name: ''
-})
+// Use computed properties to get profile data from store
+const profile = computed(() => userStore.profile || {})
 
 const passwordForm = reactive({
   old_password: '',
@@ -252,24 +239,12 @@ const getIdLabel = () => {
     teacher: '教师编号',
     student: '学号'
   }
-  return labels[authStore.userType] || 'ID'
+  return labels[userStore.role] || 'ID'
 }
 
 const loadProfile = async () => {
   try {
-    let endpoint = ''
-    if (authStore.userType === 'teacher') {
-      endpoint = '/teacher/profile'
-    } else if (authStore.userType === 'student') {
-      endpoint = '/student/profile'
-    } else {
-      // 管理员直接从store获取
-      Object.assign(profile, authStore.user)
-      return
-    }
-
-    const response = await api.get(endpoint)
-    Object.assign(profile, response)
+    await userStore.fetchUserProfile()
   } catch (error) {
     console.error('加载个人信息失败:', error)
   }
