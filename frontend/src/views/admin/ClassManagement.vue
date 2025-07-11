@@ -46,7 +46,7 @@
               </template>
               
               <!-- 自定义操作列显示 -->
-              <template #item.actions="{ item }">
+              <template #custom-actions="{ item }">
                 <v-btn
                   icon="mdi-eye"
                   size="small"
@@ -230,8 +230,7 @@ const headers = [
   { title: '班级编号', key: 'class_id', sortable: true },
   { title: '班级名称', key: 'class_name', sortable: true },
   { title: '学生人数', key: 'student_count', sortable: true },
-  { title: '描述', key: 'description', sortable: false },
-  { title: '操作', key: 'actions', sortable: false, width: 150 }
+  { title: '描述', key: 'description', sortable: false }
 ]
 
 const studentHeaders = [

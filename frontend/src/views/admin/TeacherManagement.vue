@@ -251,7 +251,7 @@ const headers = [
   { title: '年龄', key: 'age', sortable: true },
   { title: '职称', key: 'title', sortable: true },
   { title: '电话', key: 'phone', sortable: false },
-  { title: '操作', key: 'actions', sortable: false, width: 120 }
+
 ]
 
 const genderOptions = [

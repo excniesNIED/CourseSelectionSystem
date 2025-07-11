@@ -130,13 +130,13 @@
                   :rules="[v => v >= 0 || '学分不能为负数']"
                 />
               </v-col>
-              <v-col cols="12" sm="6" v-if="!isEdit">
+              <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="editedStudent.password"
-                  label="初始密码"
+                  :label="isEdit ? '新密码（留空则不修改）' : '初始密码'"
                   type="password"
                   variant="outlined"
-                  :rules="[v => !!v || '密码不能为空', v => v.length >= 6 || '密码至少6个字符']"
+                  :rules="isEdit ? [] : [v => !!v || '密码不能为空', v => v.length >= 6 || '密码至少6个字符']"
                 />
               </v-col>
             </v-row>
@@ -321,7 +321,13 @@ const saveStudent = async () => {
   saving.value = true
   try {
     if (isEdit.value) {
-      await api.put(`/admin/students/${editedStudent.value.student_id}`, editedStudent.value)
+      // Only include password when provided
+      const payload = { ...editedStudent.value }
+      if (!payload.password) {
+        delete payload.password
+      }
+      await api.put(`/admin/students/${editedStudent.value.student_id}`, payload)
+      
       showMessage('学生信息更新成功', 'success')
     } else {
       await api.post('/admin/students', editedStudent.value)

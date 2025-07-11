@@ -225,7 +225,7 @@ const headers = [
   { title: '学时', key: 'hours', sortable: true },
   { title: '考试类型', key: 'exam_type', sortable: true },
   { title: '学分', key: 'credits', sortable: true },
-  { title: '操作', key: 'actions', sortable: false, width: 120 }
+
 ]
 
 
