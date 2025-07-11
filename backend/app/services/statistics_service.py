@@ -158,9 +158,10 @@ class CourseStatisticsService:
         # 查询学生所有选课记录
         enrollments = db.session.query(
             Enrollment, CourseOffering, Course
-        ).join(CourseOffering).join(Course).filter(
-            Enrollment.student_id == student_id
-        ).all()
+        ).join(CourseOffering, Enrollment.offering_id == CourseOffering.offering_id)\
+         .join(Course, CourseOffering.course_id == Course.course_id)\
+         .filter(Enrollment.student_id == student_id)\
+         .all()
         
         total_enrollments = len(enrollments)
         total_credits = sum(course.credits for _, _, course in enrollments)
