@@ -323,11 +323,15 @@ def get_course_students(offering_id):
             return jsonify({'message': '开课记录不存在或无权限'}), 404
         
         # 查询选课学生及成绩
-        enrollments = db.session.query(
-            Enrollment, Student, Class
-        ).join(Student).join(Class).filter(
-            Enrollment.offering_id == offering_id
-        ).order_by(desc(Enrollment.score)).all()
+        # 使用显式连接条件，避免 SQLAlchemy 多表连接歧义
+        enrollments = (
+            db.session.query(Enrollment, Student, Class)
+            .join(Student, Enrollment.student_id == Student.student_id)
+            .join(Class, Student.class_id == Class.class_id)
+            .filter(Enrollment.offering_id == offering_id)
+            .order_by(desc(Enrollment.score))
+            .all()
+        )
         
         result = []
         for i, (enrollment, student, class_info) in enumerate(enrollments):

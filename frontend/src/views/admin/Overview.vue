@@ -251,7 +251,7 @@ const loadStatistics = async () => {
   try {
     loading.value = true
     const response = await api.get('/admin/statistics/overview')
-    statistics.value = response.data
+    statistics.value = response
   } catch (error) {
     console.error('加载统计信息失败:', error)
   } finally {

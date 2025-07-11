@@ -274,7 +274,7 @@ const loadData = async () => {
     
     // 加载教师统计数据
     const statsResponse = await api.get('/teacher/statistics')
-    statistics.value = statsResponse.data
+    statistics.value = statsResponse
 
     // 加载课程列表
     const coursesResponse = await api.get('/teacher/courses')
