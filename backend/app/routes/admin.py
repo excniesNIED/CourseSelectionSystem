@@ -22,6 +22,51 @@ def admin_required(f):
             return jsonify({'message': '身份验证失败'}), 401
     return decorated_function
 
+# 个人信息
+
+@admin_bp.route('/profile', methods=['GET'])
+@admin_required
+def get_admin_profile():
+    """获取管理员个人信息"""
+    admin_id = get_jwt_identity()
+    try:
+        admin = Admin.query.filter_by(admin_id=admin_id).first()
+        if not admin:
+            return jsonify({'message': '管理员不存在'}), 404
+        return jsonify({
+            'admin_id': admin.admin_id,
+            'username': admin.username,
+            'name': admin.name,
+            'created_at': admin.created_at.isoformat() if admin.created_at else None
+        }), 200
+    except Exception as e:
+        return jsonify({'message': f'获取管理员信息失败: {str(e)}'}), 500
+
+@admin_bp.route('/profile', methods=['PUT'])
+@admin_required
+def update_admin_profile():
+    """更新管理员个人信息（仅可修改用户名和姓名）"""
+    admin_id = get_jwt_identity()
+    data = request.get_json()
+    if not data:
+        return jsonify({'message': '请求体不能为空'}), 400
+    try:
+        admin = Admin.query.filter_by(admin_id=admin_id).first()
+        if not admin:
+            return jsonify({'message': '管理员不存在'}), 404
+        # 可选字段
+        if 'username' in data and data['username']:
+            # 检查用户名冲突
+            if Admin.query.filter(Admin.username == data['username'], Admin.admin_id != admin_id).first():
+                return jsonify({'message': '用户名已被占用'}), 400
+            admin.username = data['username']
+        if 'name' in data and data['name']:
+            admin.name = data['name']
+        db.session.commit()
+        return jsonify({'message': '信息更新成功'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'更新管理员信息失败: {str(e)}'}), 500
 # 教师管理
 @admin_bp.route('/teachers', methods=['GET'])
 @admin_required

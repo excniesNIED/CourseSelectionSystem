@@ -82,17 +82,17 @@
             <div class="text-caption text-medium-emphasis">
               <v-chip size="small" color="primary" variant="outlined" class="mr-2">
                 <v-icon start>mdi-account-circle</v-icon>
-                管理员: admin / admin123
+                管理员: admin / 123456
               </v-chip>
               <br class="mb-2">
               <v-chip size="small" color="secondary" variant="outlined" class="mr-2">
                 <v-icon start>mdi-account-tie</v-icon>
-                教师: T001 / teacher123
+                教师: T001 / 123456
               </v-chip>
               <br class="mb-2">
               <v-chip size="small" color="tertiary" variant="outlined">
                 <v-icon start>mdi-account-school</v-icon>
-                学生: 202301001001 / student123
+                学生: 202301001001 / 123456
               </v-chip>
             </div>
           </v-card-actions>

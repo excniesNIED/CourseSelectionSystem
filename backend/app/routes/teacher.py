@@ -257,7 +257,7 @@ def cancel_course_offering(offering_id):
 @teacher_bp.route('/students/class/<class_id>', methods=['GET'])
 @jwt_required()
 @teacher_required
-def get_class_students_ranking():
+def get_class_students_ranking(class_id):
     """按行政班级查看学生均绩及排名"""
     try:
         class_info = Class.query.filter_by(class_id=class_id).first()
@@ -309,7 +309,7 @@ def get_class_students_ranking():
 @teacher_bp.route('/courses/<offering_id>/students', methods=['GET'])
 @jwt_required()
 @teacher_required
-def get_course_students():
+def get_course_students(offering_id):
     """按任课课程查询学生单门成绩及排名"""
     teacher_id = get_jwt_identity()
     
@@ -355,7 +355,7 @@ def get_course_students():
 @teacher_bp.route('/courses/<offering_id>/scores', methods=['PUT'])
 @jwt_required()
 @teacher_required
-def update_scores():
+def update_scores(offering_id):
     """录入/修改学生成绩"""
     teacher_id = get_jwt_identity()
     
@@ -564,7 +564,21 @@ def get_teacher_statistics():
         stats = CourseStatisticsService.get_teacher_course_statistics(
             teacher_id, academic_year, semester
         )
-        
-        return jsonify(stats), 200
+
+        # 组装前端所需结构，保持与管理员统计接口一致的 basic_stats 字段
+        response_data = {
+            'basic_stats': {
+                'total_courses': stats.get('total_courses', 0),
+                'total_students': stats.get('total_students', 0),
+                'pending_grades': stats.get('unscored_students', 0),
+                'average_score': stats.get('avg_score', 0)
+            },
+            'enrollment_stats': {
+                'total_capacity': stats.get('total_capacity', 0),
+                'avg_enrollment_rate': stats.get('avg_enrollment_rate', 0)
+            }
+        }
+
+        return jsonify(response_data), 200
     except Exception as e:
         return jsonify({'message': f'获取教师统计信息失败: {str(e)}'}), 500

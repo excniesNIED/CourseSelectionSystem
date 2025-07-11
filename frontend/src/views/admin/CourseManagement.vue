@@ -26,26 +26,7 @@
                   clearable
                 />
               </v-col>
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="typeFilter"
-                  :items="typeOptions"
-                  label="课程类型"
-                  variant="outlined"
-                  density="compact"
-                  clearable
-                />
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="teacherFilter"
-                  :items="teacherOptions"
-                  label="授课教师"
-                  variant="outlined"
-                  density="compact"
-                  clearable
-                />
-              </v-col>
+            
             </v-row>            <!-- 数据表格 -->
             <CrudDataTable
               title=""
@@ -63,22 +44,14 @@
                 {{ value }} 学分
               </template>
 
-              <!-- 自定义课程类型显示 -->
-              <template #item.type="{ value }">
-                <v-chip :color="getTypeColor(value)" size="small">
+              <!-- 自定义考试类型显示 -->
+              <template #item.exam_type="{ value }">
+                <v-chip :color="value === '考试' ? 'error' : 'success'" size="small">
                   {{ value }}
                 </v-chip>
               </template>
 
-              <!-- 自定义选课情况显示 -->
-              <template #item.enrollment_status="{ item }">
-                <v-chip 
-                  :color="item.current_enrollment >= item.max_enrollment ? 'error' : 'success'"
-                  size="small"
-                >
-                  {{ item.current_enrollment }}/{{ item.max_enrollment }}
-                </v-chip>
-              </template>
+
             </CrudDataTable>
           </v-card-text>
         </v-card>
@@ -118,6 +91,27 @@
             <v-row>
               <v-col cols="12" sm="6">
                 <v-text-field
+                  v-model.number="editedCourse.hours"
+                  label="学时"
+                  type="number"
+                  variant="outlined"
+                  :rules="[v => !!v || '学时不能为空', v => v > 0 || '学时必须大于0']"
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-select
+                  v-model="editedCourse.exam_type"
+                  :items="examTypeOptions"
+                  label="考试类型"
+                  variant="outlined"
+                  :rules="[v => !!v || '请选择考试类型']"
+                />
+              </v-col>
+            </v-row>
+
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-text-field
                   v-model.number="editedCourse.credits"
                   label="学分"
                   type="number"
@@ -125,48 +119,11 @@
                   :rules="[v => !!v || '学分不能为空', v => v > 0 || '学分必须大于0']"
                 />
               </v-col>
-              <v-col cols="12" sm="6">
-                <v-select
-                  v-model="editedCourse.type"
-                  :items="typeOptions"
-                  label="课程类型"
-                  variant="outlined"
-                  :rules="[v => !!v || '请选择课程类型']"
-                />
-              </v-col>
             </v-row>
 
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-select
-                  v-model="editedCourse.teacher_id"
-                  :items="teacherOptions"
-                  label="授课教师"
-                  variant="outlined"
-                  :rules="[v => !!v || '请选择授课教师']"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model.number="editedCourse.max_enrollment"
-                  label="最大选课人数"
-                  type="number"
-                  variant="outlined"
-                  :rules="[v => !!v || '最大选课人数不能为空', v => v > 0 || '最大选课人数必须大于0']"
-                />
-              </v-col>
-            </v-row>
 
-            <v-row>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="editedCourse.description"
-                  label="课程描述"
-                  variant="outlined"
-                  rows="3"
-                />
-              </v-col>
-            </v-row>
+
+
           </v-form>
         </v-card-text>
 
@@ -230,10 +187,9 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const courses = ref([])
-const teachers = ref([])
+
 const search = ref('')
-const typeFilter = ref('')
-const teacherFilter = ref('')
+
 
 const dialog = ref(false)
 const deleteDialog = ref(false)
@@ -250,45 +206,35 @@ const deleteItem = ref(null)
 const editedCourse = ref({
   course_id: '',
   course_name: '',
-  credits: null,
-  type: '',
-  teacher_id: '',
-  max_enrollment: null,
-  description: ''
+  hours: null,
+  exam_type: '',
+  credits: null
 })
 
 const defaultCourse = {
   course_id: '',
   course_name: '',
-  credits: null,
-  type: '',
-  teacher_id: '',
-  max_enrollment: null,
-  description: ''
+  hours: null,
+  exam_type: '',
+  credits: null
 }
 
 const headers = [
   { title: '课程编号', key: 'course_id', sortable: true },
   { title: '课程名称', key: 'course_name', sortable: true },
+  { title: '学时', key: 'hours', sortable: true },
+  { title: '考试类型', key: 'exam_type', sortable: true },
   { title: '学分', key: 'credits', sortable: true },
-  { title: '类型', key: 'type', sortable: true },
-  { title: '授课教师', key: 'teacher_name', sortable: true },
-  { title: '选课情况', key: 'enrollment_status', sortable: false },
   { title: '操作', key: 'actions', sortable: false, width: 120 }
 ]
 
-const typeOptions = [
-  { title: '必修', value: '必修' },
-  { title: '选修', value: '选修' },
-  { title: '通识', value: '通识' }
+
+const examTypeOptions = [
+  { title: '考试', value: '考试' },
+  { title: '考查', value: '考查' }
 ]
 
-const teacherOptions = computed(() => 
-  Array.isArray(teachers.value) ? teachers.value.map(teacher => ({
-    title: teacher.name,
-    value: teacher.teacher_id
-  })) : []
-)
+
 
 const filteredCourses = computed(() => {
   let filtered = Array.isArray(courses.value) ? courses.value : []
@@ -296,30 +242,13 @@ const filteredCourses = computed(() => {
   if (search.value) {
     filtered = filtered.filter(course =>
       course.course_name.includes(search.value) ||
-      course.course_id.includes(search.value) ||
-      course.teacher_name.includes(search.value)
+      course.course_id.includes(search.value)
     )
-  }
-
-  if (typeFilter.value) {
-    filtered = filtered.filter(course => course.type === typeFilter.value)
-  }
-
-  if (teacherFilter.value) {
-    filtered = filtered.filter(course => course.teacher_id === teacherFilter.value)
   }
 
   return filtered
 })
 
-const getTypeColor = (type) => {
-  switch (type) {
-    case '必修': return 'error'
-    case '选修': return 'primary'
-    case '通识': return 'success'
-    default: return 'grey'
-  }
-}
 
 const loadCourses = async () => {
   loading.value = true
@@ -333,14 +262,7 @@ const loadCourses = async () => {
   }
 }
 
-const loadTeachers = async () => {
-  try {
-    const response = await api.get('/admin/teachers')
-    teachers.value = response.teachers || []
-  } catch (error) {
-    showMessage('加载教师列表失败', 'error')
-  }
-}
+
 
 const openAddDialog = () => {
   isEdit.value = false
@@ -364,11 +286,18 @@ const saveCourse = async () => {
 
   saving.value = true
   try {
+    const payload = {
+      course_id: editedCourse.value.course_id,
+      course_name: editedCourse.value.course_name,
+      hours: editedCourse.value.hours,
+      exam_type: editedCourse.value.exam_type === '考试',
+      credits: editedCourse.value.credits
+    }
     if (isEdit.value) {
-      await api.put(`/admin/courses/${editedCourse.value.course_id}`, editedCourse.value)
+      await api.put(`/admin/courses/${editedCourse.value.course_id}`, payload)
       showMessage('课程信息更新成功', 'success')
     } else {
-      await api.post('/admin/courses', editedCourse.value)
+      await api.post('/admin/courses', payload)
       showMessage('课程添加成功', 'success')
     }
     closeDialog()
@@ -407,6 +336,6 @@ const showMessage = (text, color = 'success') => {
 
 onMounted(() => {
   loadCourses()
-  loadTeachers()
+
 })
 </script>
